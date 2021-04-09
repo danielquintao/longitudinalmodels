@@ -86,12 +86,12 @@ class ExtendedGCMSolver():
         print(optimize_res.message)
 
         # recover optimal beta, R, D
-        beta_opt = theta_opt[0:self.p].reshape(-1,1)
+        beta_opt = theta_opt[0:self.p]
         R_upper = flattened2triangular(theta_opt[self.p:self.p+int(self.T*(self.T+1)/2)],self.T)
         R_opt = R_upper.T @ R_upper
         D_upper = flattened2triangular(theta_opt[self.p+int(self.T*(self.T+1)/2):],self.k)
         D_opt = D_upper.T @ D_upper
-        print("intercept, slope and whatever higher degree params: {}".format(beta_opt.flatten()))
+        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
         print("R", R_opt)
         print("D", D_opt)
 

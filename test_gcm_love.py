@@ -14,7 +14,7 @@ degree = 1
 gcm = GCMSolver(y, time, degree)
 beta_opt, R_opt, D_opt = gcm.solve()
 
-# plot(beta_opt.flatten(), time, y, degree)
+plot(beta_opt, time, y, degree)
 
 # We'll now test the GCM solver with known groups (predictors of fixed slope)
 # In lovedata dataset, the before-before-last column indicates to which of the
@@ -25,6 +25,5 @@ groups = total_data[:,-2:]
 
 egcm = ExtendedGCMSolver(y, groups, time, degree)
 ebeta_opt, eR_opt, eD_opt = egcm.solve()
-print(ebeta_opt)
 
-# extended_plot(ebeta_opt.flatten(), time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
+extended_plot(ebeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
