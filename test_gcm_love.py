@@ -2,7 +2,7 @@ from GCM import GCMSolver
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
 import numpy as np
-from gcm_plot import plot
+from gcm_plot import *
 
 total_data = np.genfromtxt("playground_data/lovedata.csv", delimiter=",", skip_header=1)
 print(total_data)
@@ -26,3 +26,5 @@ print(groups)
 egcm = ExtendedGCMSolver(y, groups, time, degree)
 ebeta_opt, eR_opt, eD_opt = egcm.solve()
 print(ebeta_opt)
+
+extended_plot(ebeta_opt.flatten(), time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
