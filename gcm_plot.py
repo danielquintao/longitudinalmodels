@@ -35,7 +35,7 @@ def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
                                                                 (e.g. if there are 2 groups encoded by 0 and 1, and degree is 1, then
                                                                 the first 2 values are the curve a0+a1*t for group 0, while group 1 is
                                                                 represented by (a0+a2) + (a1+a3)*x)
-        time (list or numpy array of length T): [time points (supposed to be the same for all individuals)]
+        time (numpy array of length T): [time points (supposed to be the same for all individuals)]
         data (2D numpy array of shape (N,T)): [time-observations for the N individuals]
         groups (2D numpy array of shape (N,M)): each group is encoded by a combination of M binary values 
         groups2plot (list of tuples): combinations of our M binary variables that should be plotted as a group. For example, we may

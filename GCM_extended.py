@@ -92,5 +92,7 @@ class ExtendedGCMSolver():
         D_upper = flattened2triangular(theta_opt[self.p+int(self.T*(self.T+1)/2):],self.k)
         D_opt = D_upper.T @ D_upper
         print("intercept, slope and whatever higher degree params: {}".format(beta_opt.flatten()))
+        print("R", R_opt)
+        print("D", D_opt)
 
         return beta_opt, R_opt, D_opt
