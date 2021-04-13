@@ -72,7 +72,7 @@ class ExtendedGCMSolver():
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
-    def solve(self):
+    def solve(self, method='BFGS'):
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
         R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
@@ -80,7 +80,15 @@ class ExtendedGCMSolver():
         theta_0 = np.concatenate((beta_0.flatten(), R_upper0, D_upper0))
 
         # maximize likelihood -- default
-        optimize_res = optimize.minimize(self.minus_l, theta_0, options={'maxiter':200})
+        if method == 'BFGS':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+            options={'maxiter':1000})
+        elif method == 'TNC':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+            options={'maxfun':1000})
+        else:
+            print("'method' {} not recognized!".format(method))
+            raise ValueError
         theta_opt = optimize_res.x
         print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
         print(optimize_res.message)

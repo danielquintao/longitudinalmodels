@@ -1,4 +1,5 @@
 from GCM import GCMSolver
+from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
 import numpy as np
@@ -11,10 +12,23 @@ time = np.array([-3,3,9,36])
 
 degree = 1
 
+print("=========== GCM Solver (with Scipy.optimization) ===================")
+
 gcm = GCMSolver(y, time, degree)
 beta_opt, R_opt, D_opt = gcm.solve()
 
 plot(beta_opt, time, y, degree)
+
+# gcm.multisolve()
+
+# print("=========== GCM Solver with CVXPY ===================================")
+
+# gcm_cvxpy = GCMSolver_CVXPY(y, time, degree)
+# beta_opt, R_opt, D_opt = gcm_cvxpy.solve()
+
+# plot(beta_opt, time, y, degree)
+
+print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 
 # We'll now test the GCM solver with known groups (predictors of fixed slope)
 # In lovedata dataset, the before-before-last column indicates to which of the

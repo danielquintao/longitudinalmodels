@@ -49,7 +49,7 @@ class GCMSolver():
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
-    def solve(self):
+    def solve(self, method='BFGS'):
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
         R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
@@ -57,7 +57,15 @@ class GCMSolver():
         theta_0 = np.concatenate((beta_0.flatten(), R_upper0, D_upper0))
 
         # maximize likelihood -- default
-        optimize_res = optimize.minimize(self.minus_l, theta_0, options={'maxiter':200})
+        if method == 'BFGS':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+            options={'maxiter':1000})
+        elif method == 'TNC':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+            options={'maxfun':1000})
+        else:
+            print("'method' {} not recognized!".format(method))
+            raise ValueError
         theta_opt = optimize_res.x
         print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
         print(optimize_res.message)
@@ -73,3 +81,55 @@ class GCMSolver():
         print("D", D_opt)
 
         return beta_opt, R_opt, D_opt
+
+    def multisolve(self):
+        """Test multiple optimization methods
+        With the parental love dataset (Oravecz, Muth - DOI 10.3758/s13423-017-1281-0), the
+        best methods (in terms of conergence) were "Customized BFGS 2 (3-point approx for jac)"
+        and "TNC 2 (3-point approx for jac)"
+        """
+        # initial guess for the optimization
+        beta_0 = np.zeros((self.p,1))
+        R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
+        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        theta_0 = np.concatenate((beta_0.flatten(), R_upper0, D_upper0))
+
+        # maximize likelihood -- default
+        print("Default")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, options={'maxiter':1000})
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # maximize likelihood -- Nelder-Mead
+        print("Nelder-Mead")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, method='Nelder-Mead')
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # maximize likelihood -- customized BFGS
+        print("Customized BFGS")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, method='BFGS',
+        options={'maxiter':1000, 'eps':.00000001})
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # maximize likelihood -- customized BFGS 2
+        print("Customized BFGS 2 (3-point approx for jac)")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+        options={'maxiter':1000})
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # maximize likelihood -- Truncated Newton
+        print("TNC")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, method='TNC',
+        options={'maxfun':1000})
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # maximize likelihood -- Truncated Newton 2
+        print("TNC 2 (3-point approx for jac)")
+        optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+        options={'maxfun':1000})
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
