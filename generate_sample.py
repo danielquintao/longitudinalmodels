@@ -1,8 +1,9 @@
 import numpy as np
 from matrix_utils import flattened2triangular
-from gcm_plot import extended_plot
+from gcm_plot import extended_plot, plot
+import matplotlib.pyplot as plt
 
-def generate_sample(N, time, degree, N_groups, scaling=None):
+def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
     """generate fake longitudinal sample
        Note: We have a fixed scale for generating the covariance matrices (covariances are
              generated from Cholesky decompositins with elements in range [0,1)). Hence, in
@@ -17,6 +18,11 @@ def generate_sample(N, time, degree, N_groups, scaling=None):
         N_groups (int): number of groups to which individuals belong; these groups will be modeled
                         as bit vectors of size N_groups-1, following the convention (0,0,..,0) for
                         the a group, then (1,0,0..0), (0,1,0..0), (0,0,1..0), ... for the others
+        output_file (str): path to the file (includes name) where output will be stored. None if we
+                           choose not to generate output. Suffixes "_data" and "_ground_truth"
+                           will be added to the file name, and two files will be created (one with
+                           the data, the other one with the underlying curve parameters). Defaults
+                           to None.
         scaling (1D numpy array (len degree+1), optional): scale to apply to the m-th order coeff
                                                            of the equations underlying each group,
                                                            which are independently generated in the 
@@ -68,13 +74,32 @@ def generate_sample(N, time, degree, N_groups, scaling=None):
         mu = (X @ beta).flatten()
         yi = np.random.multivariate_normal(mu,cov_mat)
         data[i] = np.concatenate((yi,bit_vec_g))
+    # persist output
+    if output_file is not None:
+        str_format = []
+        for i in range(T):
+            str_format.append('%.8f')
+        for i in range(N_groups-1):
+            str_format.append('%d')
+        if output_file[-4:] ==  '.txt' or output_file[-4:] ==  '.csv':
+            output_file = output_file[:-4]
+        np.savetxt(output_file+"_data.csv", data, fmt=str_format, delimiter=",")
+        other_file = open(output_file+"_ground_truth.txt", 'w')
+        other_file.write('degree:\n{}\n\n'.format(degree))
+        other_file.write('time-points:\n{}\n\n'.format(time))
+        other_file.write('number of groups:\n{}\n\n'.format(N_groups))
+        other_file.write('beta:\n{}\n\n'.format(beta.flatten()))
+        other_file.write('R:\n{}\n\n'.format(R))
+        other_file.write('D:\n{}\n'.format(D))
+        other_file.close()
     return data, beta.flatten(), R, D
 
 time = np.array([0,0.5,1,1.5])
-degree = 2
-data, beta, R, D = generate_sample(50, time, degree, 2, scaling=[3,1,1])
+degree = 1
+data, beta, R, D = generate_sample(50, time, degree, 1, output_file="playground_data/benchmark2", scaling=[1,1])
 # print(data,'\n',beta,'\n',R,'\n',D)
-extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple
+# extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
+plot(beta, time, data, degree)
 
         
 
