@@ -1,0 +1,12 @@
+1- estudar a 'especiicidade' de um modelo (qd é q não converge?)
+    * " unconstrained estimation results in simpler asymptotic distributions and has greater
+        power in detecting structural misspecification related to negative error variance 
+        estimates" - Testing Negative Error Variances, Bollen, Kolenikov
+
+2- tentar fazer lavaan convergir pro benchmark 1
+   testar outras matrizes Z, tentar erro eps constante no tempo, tentar mais dados ou grau menor
+   --> o problema é o número TOTAL de parâmetros a "fittar" ?
+
+3- Acrescentar mais informações de convergência, e tvz msm de qualidade do fit
+
+4- criar/baixar mais datasets de teste e rodar mais testes

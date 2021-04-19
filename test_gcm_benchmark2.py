@@ -1,4 +1,4 @@
-from GCM import GCMSolver
+from GCM import GCMSolver, SimplifiedGCMSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
@@ -14,10 +14,26 @@ degree = 1 # cf. benchmark2_ground_truth.txt
 
 print("=========== GCM Solver (with Scipy.optimization) ===================")
 
-gcm = GCMSolver(y, time, degree)
-beta_opt, R_opt, D_opt = gcm.solve()
+try:
+    gcm = GCMSolver(y, time, degree)
+    beta_opt, R_opt, D_opt = gcm.solve()
 
-plot(beta_opt, time, y, degree)
+    plot(beta_opt, time, y, degree)
 
-sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
-print("y cov matrix:\n{}".format(sigma))
+    sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
+    print("Sigma:\n{}".format(sigma))
+except AssertionError as err:
+    print(err)
+
+print("=========== GCM Solver with diagonal R (Scipy.optimization) ===================")
+
+try:
+    sgcm = SimplifiedGCMSolver(y, time, degree)
+    sbeta_opt, sR_opt, sD_opt = sgcm.solve()
+
+    plot(sbeta_opt, time, y, degree)
+
+    ssigma = sR_opt + sgcm.Z @ sD_opt @ sgcm.Z.T
+    print("Sigma:\n{}".format(ssigma))
+except AssertionError as err:
+    print(err)

@@ -4,7 +4,7 @@ import scipy.optimize as optimize
 from matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
 from gcm_plot import plot
 
-class ExtendedGCMSolver():
+class ParentExtendedGCMSolver():
     def __init__(self, y, groups, timesteps, degree):
         assert len(y) == len(groups)
         self.y = y
@@ -41,6 +41,10 @@ class ExtendedGCMSolver():
             X[:,:, i*self.k : (i+1)*self.k] *= np.tile(groups[:,i-1].reshape(self.N,1,1), (1,self.T,self.k))
         self.X = X
 
+class ExtendedGCMSolver(ParentExtendedGCMSolver):
+    def __init__(self, y, groups, timesteps, degree):
+        super().__init__(y, groups, timesteps, degree)
+
     def minus_l(self, theta):
         """log-likelihood * (-1) (because we are in a maximization problem)
 
@@ -72,7 +76,16 @@ class ExtendedGCMSolver():
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
+    def degrees_of_freedom(self):
+        n_params = self.p + self.T*(self.T+1)//2 + self.k*(self.k+1)//2
+        # iformation amount : mean and co-variances per indiviual:
+        n_info = self.T + self.T*(self.T+1)//2
+        return n_info - n_params
+
     def solve(self, method='BFGS'):
+
+        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
         R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
@@ -98,6 +111,159 @@ class ExtendedGCMSolver():
         R_upper = flattened2triangular(theta_opt[self.p:self.p+int(self.T*(self.T+1)/2)],self.T)
         R_opt = R_upper.T @ R_upper
         D_upper = flattened2triangular(theta_opt[self.p+int(self.T*(self.T+1)/2):],self.k)
+        D_opt = D_upper.T @ D_upper
+        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+        print("R", R_opt)
+        print("D", D_opt)
+
+        return beta_opt, R_opt, D_opt
+
+class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
+    def __init__(self, y, groups, timesteps, degree):
+        super().__init__(y, groups, timesteps, degree)
+
+    def minus_l(self, theta):
+        """log-likelihood * (-1) (because we are in a maximization problem)
+
+        Args:
+            theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
+                            [beta, flattened cholesky decomp. of R, flattened cholesky decomp. of D], 
+                            where the cholesky decompositions are "upper-triangular" (scipy default)
+                            and written in the flattened form a11, a12,..., a1n, a22, a23, ... 
+                            (check functions flattened2triangular and triangular2flattened) 
+                            Note: In order to recover the original D and R, p and T must be known globally
+
+        Returns:
+            scalar: (-1) * log-likelihood for theta under the GCM model
+        """
+        # recover beta, R, D:
+        beta = theta[0:self.p].reshape(-1,1) # column
+        R = np.eye(self.T) * (theta[self.p:self.p+self.T] ** 2)
+        D_upper = flattened2triangular(theta[self.p+self.T:], self.k)
+        D = D_upper.T @ D_upper
+        # compute likelihood:
+        variance = R + self.Z @ (D @ self.Z.T)
+        # if linalg.det(variance) < 0:
+        #     print("det(variance matrix) = {}".format(linalg.det(variance)))
+        first_term = -(self.N/2) * np.log(linalg.det(variance))
+        second_term = 0
+        for i in range(self.N):
+            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ linalg.inv(variance) @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
+        second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
+        return -(first_term + second_term)
+
+    def degrees_of_freedom(self):
+        n_params = self.p + self.T + self.k*(self.k+1)//2
+        # iformation amount : mean and co-variances per indiviual:
+        n_info = self.T + self.T*(self.T+1)//2
+        return n_info - n_params
+
+    def solve(self, method='BFGS'):
+
+        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+
+        # initial guess for the optimization
+        beta_0 = np.zeros((self.p,1))
+        R_diag = np.random.rand(self.T)
+        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        theta_0 = np.concatenate((beta_0.flatten(), R_diag, D_upper0))
+
+        # maximize likelihood -- default
+        if method == 'BFGS':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+            options={'maxiter':1000})
+        elif method == 'TNC':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+            options={'maxfun':1000})
+        else:
+            print("'method' {} not recognized!".format(method))
+            raise ValueError
+        theta_opt = optimize_res.x
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # recover optimal beta, R, D
+        beta_opt = theta_opt[0:self.p]
+        R_diag = theta_opt[self.p:self.p+self.T]
+        R_opt = np.eye(self.T) * (R_diag ** 2)
+        D_upper = flattened2triangular(theta_opt[self.p+self.T:],self.k)
+        D_opt = D_upper.T @ D_upper
+        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+        print("R", R_opt)
+        print("D", D_opt)
+
+        return beta_opt, R_opt, D_opt
+
+class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
+    def __init__(self, y, groups, timesteps, degree):
+        super().__init__(y, groups, timesteps, degree)
+
+    def minus_l(self, theta):
+        """log-likelihood * (-1) (because we are in a maximization problem)
+
+        Args:
+            theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
+                            [beta, flattened cholesky decomp. of R, flattened cholesky decomp. of D], 
+                            where the cholesky decompositions are "upper-triangular" (scipy default)
+                            and written in the flattened form a11, a12,..., a1n, a22, a23, ... 
+                            (check functions flattened2triangular and triangular2flattened) 
+                            Note: In order to recover the original D and R, p and T must be known globally
+
+        Returns:
+            scalar: (-1) * log-likelihood for theta under the GCM model
+        """
+        # recover beta, R, D:
+        beta = theta[0:self.p].reshape(-1,1) # column
+        R_sigma = theta[self.p] ** 2 # to positivate
+        R = R_sigma * np.eye(self.T)
+        D_upper = flattened2triangular(theta[self.p+1:], self.k)
+        D = D_upper.T @ D_upper
+        # compute likelihood:
+        variance = R + self.Z @ (D @ self.Z.T)
+        # if linalg.det(variance) < 0:
+        #     print("det(variance matrix) = {}".format(linalg.det(variance)))
+        first_term = -(self.N/2) * np.log(linalg.det(variance))
+        second_term = 0
+        for i in range(self.N):
+            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ linalg.inv(variance) @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
+        second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
+        return -(first_term + second_term)
+
+    def degrees_of_freedom(self):
+        n_params = self.p + 1 + self.k*(self.k+1)//2
+        # iformation amount : mean and co-variances per indiviual:
+        n_info = self.T + self.T*(self.T+1)//2
+        return n_info - n_params
+
+    def solve(self, method='BFGS'):
+
+        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+
+        # initial guess for the optimization
+        beta_0 = np.zeros((self.p,1))
+        R_sigma0 = np.random.rand(1) + 0.00000001 # strictly positive
+        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_upper0))
+
+        # maximize likelihood -- default
+        if method == 'BFGS':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+            options={'maxiter':1000})
+        elif method == 'TNC':
+            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+            options={'maxfun':1000})
+        else:
+            print("'method' {} not recognized!".format(method))
+            raise ValueError
+        theta_opt = optimize_res.x
+        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
+        print(optimize_res.message)
+
+        # recover optimal beta, R, D
+        beta_opt = theta_opt[0:self.p]
+        R_sigma = theta_opt[self.p] ** 2 # to positivate
+        R_opt = R_sigma * np.eye(self.T)
+        D_upper = flattened2triangular(theta_opt[self.p+1:],self.k)
         D_opt = D_upper.T @ D_upper
         print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
         print("R", R_opt)

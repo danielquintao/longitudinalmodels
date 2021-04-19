@@ -1,6 +1,6 @@
 from GCM import GCMSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
-from GCM_extended import ExtendedGCMSolver
+from GCM_extended import ExtendedGCMSolver, ExtendedAndSimplifiedGCMSolver, TimeIndepErrorExtendedGCMSolver
 import pandas as pd
 import numpy as np
 from gcm_plot import plot, extended_plot
@@ -12,16 +12,6 @@ time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark1_ground_truth.txt
 
 degree = 2 # cf. benchmark1_ground_truth.txt
 
-print("=========== GCM Solver (with Scipy.optimization) ===================")
-
-gcm = GCMSolver(y, time, degree)
-beta_opt, R_opt, D_opt = gcm.solve()
-
-plot(beta_opt, time, y, degree)
-
-sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
-print("y cov matrix:\n{}".format(sigma))
-
 print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 
 # We'll now test the GCM solver with known groups (predictors of fixed slope)
@@ -31,10 +21,45 @@ print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 groups = total_data[:,-1:]
 # print(groups)
 
-egcm = ExtendedGCMSolver(y, groups, time, degree)
-ebeta_opt, eR_opt, eD_opt = egcm.solve()
+try:
+    egcm = ExtendedGCMSolver(y, groups, time, degree)
+    ebeta_opt, eR_opt, eD_opt = egcm.solve()
 
-extended_plot(ebeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+    extended_plot(ebeta_opt, time, y, groups, [(0,),(1,)] ,degree)
 
-esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
-print("y cov matrix:\n{}".format(esigma))
+    esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
+    print("Sigma:\n{}".format(esigma))
+except AssertionError as err:
+    print(err)
+
+print("==== Extended GCM Solver (known groups) w/ diag. R (Scipy.optimization) ====")
+
+groups = total_data[:,-1:]
+# print(groups)
+
+try:
+    esgcm = ExtendedAndSimplifiedGCMSolver(y, groups, time, degree)
+    esbeta_opt, esR_opt, esD_opt = esgcm.solve()
+
+    extended_plot(esbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+
+    essigma = esR_opt + esgcm.Z @ esD_opt @ esgcm.Z.T
+    print("Sigma:\n{}".format(essigma))
+except AssertionError as err:
+    print(err)
+
+print("==== Extended GCM Solver (known groups) w/ time-indep. errors (Scipy.optimization) ====")
+
+groups = total_data[:,-1:]
+# print(groups)
+
+try:
+    tiesgcm = TimeIndepErrorExtendedGCMSolver(y, groups, time, degree)
+    tiesbeta_opt, tiesR_opt, tiesD_opt = tiesgcm.solve()
+
+    extended_plot(tiesbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+
+    tiessigma = tiesR_opt + tiesgcm.Z @ tiesD_opt @ tiesgcm.Z.T
+    print("Sigma:\n{}".format(tiessigma))
+except AssertionError as err:
+    print(err)
