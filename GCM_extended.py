@@ -40,6 +40,8 @@ class ParentExtendedGCMSolver():
         for i in range(1,self.N_groups+1):
             X[:,:, i*self.k : (i+1)*self.k] *= np.tile(groups[:,i-1].reshape(self.N,1,1), (1,self.T,self.k))
         self.X = X
+        # Finally, ESTIMATE min rank of X among all N individuals. It may be useful for identifiability
+        self.rank_X = min(self.T, self.k + max(np.sum(groups!=0, axis=1)))
 
 class ExtendedGCMSolver(ParentExtendedGCMSolver):
     def __init__(self, y, groups, timesteps, degree):
@@ -76,15 +78,22 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
-    def degrees_of_freedom(self):
-        n_params = self.p + self.T*(self.T+1)//2 + self.k*(self.k+1)//2
-        # iformation amount : mean and co-variances per indiviual:
-        n_info = self.T + self.T*(self.T+1)//2
-        return n_info - n_params
+    def degrees_of_freedom(self, verbose=False):
+        # n_params = self.p + self.T*(self.T+1)//2 + self.k*(self.k+1)//2
+        # # iformation amount : mean, co-variances and variable encoding group of each of the T observations per indiviual:
+        # # recall that despite the name, M_groups is not the number of groups stricto sensu
+        # n_info = self.T + self.T*(self.T+1)//2 + self.T * self.N_groups
+        # print('df={}'.format(n_info - n_params))
+        # return n_info - n_params
+        df_beta = self.T + self.T*self.N_groups - self.p
+        df_vars_covars = self.T*(self.T+1)//2 - self.T*(self.T+1)//2 - self.k*(self.k+1)//2
+        if verbose:
+            print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
+        return df_beta, df_vars_covars
 
     def solve(self, method='BFGS'):
 
-        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -95,10 +104,10 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000})
+            options={'maxiter':1000, 'disp':True})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000})
+            options={'maxfun':1000, 'disp':True})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
@@ -152,15 +161,22 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
-    def degrees_of_freedom(self):
-        n_params = self.p + self.T + self.k*(self.k+1)//2
-        # iformation amount : mean and co-variances per indiviual:
-        n_info = self.T + self.T*(self.T+1)//2
-        return n_info - n_params
+    def degrees_of_freedom(self, verbose=False):
+        # n_params = self.p + self.T + self.k*(self.k+1)//2
+        # # iformation amount : mean, co-variances and variable encoding group of each of the T observations per indiviual:
+        # # recall that despite the name, M_groups is not the number of groups stricto sensu
+        # n_info = self.T + self.T*(self.T+1)//2 + self.T * self.N_groups
+        # print('df={}'.format(n_info - n_params))
+        # return n_info - n_params
+        df_beta = self.T + self.T*self.N_groups - self.p
+        df_vars_covars = self.T*(self.T+1)//2 - self.T - self.k*(self.k+1)//2
+        if verbose:
+            print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
+        return df_beta, df_vars_covars
 
     def solve(self, method='BFGS'):
 
-        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -171,10 +187,10 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000})
+            options={'maxiter':1000, 'disp':True})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000})
+            options={'maxfun':1000, 'disp':True})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
@@ -229,15 +245,23 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
         return -(first_term + second_term)
 
-    def degrees_of_freedom(self):
-        n_params = self.p + 1 + self.k*(self.k+1)//2
-        # iformation amount : mean and co-variances per indiviual:
-        n_info = self.T + self.T*(self.T+1)//2
-        return n_info - n_params
+    def degrees_of_freedom(self, verbose=False):
+        # n_params = self.p + 1 + self.k*(self.k+1)//2
+        # # iformation amount : mean and co-variances per indiviual:
+        # # iformation amount : mean, co-variances and variable encoding group of each of the T observations per indiviual:
+        # # recall that despite the name, M_groups is not the number of groups stricto sensu
+        # n_info = self.T + self.T*(self.T+1)//2 + self.T * self.N_groups
+        # print('df={}'.format(n_info - n_params))
+        # return n_info - n_params
+        df_beta = self.T + self.T*self.N_groups - self.p
+        df_vars_covars = self.T*(self.T+1)//2 - 1 - self.k*(self.k+1)//2
+        if verbose:
+            print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
+        return df_beta, df_vars_covars
 
     def solve(self, method='BFGS'):
 
-        assert self.degrees_of_freedom() >= 0, "Identifiability problem: you have more parameters than 'information'"
+        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -248,10 +272,10 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000})
+            options={'maxiter':1000, 'disp':True})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000})
+            options={'maxfun':1000, 'disp':True})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError

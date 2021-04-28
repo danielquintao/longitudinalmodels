@@ -1,12 +1,34 @@
-1- estudar a 'especiicidade' de um modelo (qd é q não converge?)
+1- study model specificity
     * " unconstrained estimation results in simpler asymptotic distributions and has greater
         power in detecting structural misspecification related to negative error variance 
         estimates" - Testing Negative Error Variances, Bollen, Kolenikov
 
-2- tentar fazer lavaan convergir pro benchmark 1
-   testar outras matrizes Z, tentar erro eps constante no tempo, tentar mais dados ou grau menor
-   --> o problema é o número TOTAL de parâmetros a "fittar" ?
+1.2-  check inversibilité de R+ZDZ' -- OK
 
-3- Acrescentar mais informações de convergência, e tvz msm de qualidade do fit
+1.3- tester time-indep error avec données réelles -- OK (no warning)
 
-4- criar/baixar mais datasets de teste e rodar mais testes
+2- revisit lavaan source code : how does it model the likelihood? Why does it happen to
+   have negative variance? I THINK that lavaan may use directly the sample variance instead
+   of directly using the y_i as I do (they may use the FIML presented in Preacher and in
+   the paper "Testing if Negative [...]" from Bollen and Kolenikov)
+
+3- Consider:
+    - multiple starting values (either to "search the global max" or to state that the model is not
+      identified if there exist non-global maxima - "Marc Lavielle, Leon Aarons. What do we mean by
+      identifiability in mixed effects models?. 2016.hal-01251986") -- NO 
+    - removing the implicitly added constants to see what happen -- FIASCO w/ MLE => try FIML
+    - try another estimator in lavaan, or even another software to see if the problem is
+      with (my implementation in) lavaan or with the model itself
+    - using profile likelihood to check structural and practical identifiability (Raue et al)
+    - use the "Fisher Information Matrix" as an heuristics to detect identifiability (again, "Marc 
+      Lavielle, Leon Aarons. What do we mean by identifiability in mixed effects models?")
+    - Study if this is model mispecification with Likelihood Ratio Tests (Chi2-difference)
+
+4- Add statistics (chi2, z-value, etc) and further convergence information
+
+5- new datasets, more tests
+
+(after) - tirar modelo "normal" (R completo) se a identifibilidade for definida para o beta
+e para (R,D) separadamente
+
+(after) - fix header comments

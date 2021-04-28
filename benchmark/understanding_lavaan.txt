@@ -1,0 +1,22 @@
+what's H1 in lavaan ?
+What's the baselie model in lavaan?
+How to visualize the matrix representation of the model?
+
+
+useful lavaan functions:
+fitted(fit) -- vs -- inspectSampleCov(model, dataset) (the difference between the latter and the former is given by residuals(fit))
+parameterEstimates(fit) & summary(fit) --> view several statistics and results at once
+lavInspect(fit [,with=list]) --> internal representation of the model!
+    - Parameters to be estimated are called 1,2,3,...
+    - columns are mean structs, triangular matrices are cov matrices, others are relations 'a -> b'
+AIC(fit), BIC(fit), fitMeasures(fit) --> more precise statistics
+
+How does lavaan compute the MLE (and related stuff):
+- see in lines 29,30 of lav_model_compute.R that computeSigmaHat has a param 'extra' that
+  says if we should check whether sigma hat is positive-definite or not. This option is TRUE
+  in lav_model_estimate for the initial value of the estimation (lines 404, 407), TRUE also
+  in lav_model_objective.R when estimator is 'ML', and similarly for the gradient.
+  If 'extra' is TRUE and the Sigma.hat is NOT positive definite (which is checked as 
+  "some eigenvalue is practically zero" || sum(eigenvalues) == 0), then lavaan computes the
+  generalized inverse (with MASS::ginv) and set Sigma.inv to this value, sets the log det as
+  log(.Machine$double.eps), and sets the flag "po" to FALSE

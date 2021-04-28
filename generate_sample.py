@@ -45,15 +45,25 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
     # generate covarianve matrixes (using a "cholesky trick" to ensure properties)
     T = len(time)
     k = degree+1
-    R_upper = flattened2triangular(np.random.rand(int(T*(T+1)/2)))
-    R = R_upper.T @ R_upper
-    D_upper = flattened2triangular(np.random.rand(int(k*(k+1)/2)))
-    D = D_upper.T @ D_upper
     # generate matrix Z of shape e.g. [[1,t0,t0^2],[1,t1,t1^2]]
     Z = np.ones((T,1))
     time = np.array(time).reshape(-1,1)
     for i in range(1, degree+1):
         Z = np.concatenate((Z,time**i), axis=1)
+    ok = False
+    # Repeat until 
+    precision = 1E-10
+    while not ok:
+        R_upper = flattened2triangular(np.random.rand(int(T*(T+1)/2)))
+        R = R_upper.T @ R_upper
+        D_upper = flattened2triangular(np.random.rand(int(k*(k+1)/2)))
+        D = D_upper.T @ D_upper
+        try:
+            inv = np.linalg.inv(R+Z@D@Z.T)
+        except np.linalg.LinAlgError:
+            continue
+        ok = ((np.eye(T) - inv @ (R+Z@D@Z.T)) < precision * np.ones((T,T))).all()
+        print(inv @ (R+Z@D@Z.T))
     # generate random individuals
     data = np.zeros((N,T+(N_groups-1)))
     for i in range(N):
@@ -94,11 +104,11 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
         other_file.close()
     return data, beta.flatten(), R, D
 
-time = np.array([0,0.5,1,1.5,2.])
+time = np.array([0,0.5,1,1.5])
 degree = 2
-data, beta, R, D = generate_sample(250, time, degree, 2, output_file="playground_data/benchmark4", scaling=[1,1,1])
+data, beta, R, D = generate_sample(250, time, degree, 2, output_file="playground_data/benchmark5", scaling=[3,1,1])
 # print(data,'\n',beta,'\n',R,'\n',D)
-extended_plot(beta, time, data[:,0:5], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
+extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
 # plot(beta, time, data, degree)
 
         

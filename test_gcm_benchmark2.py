@@ -1,4 +1,4 @@
-from GCM import GCMSolver, SimplifiedGCMSolver
+from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
@@ -35,5 +35,18 @@ try:
 
     ssigma = sR_opt + sgcm.Z @ sD_opt @ sgcm.Z.T
     print("Sigma:\n{}".format(ssigma))
+except AssertionError as err:
+    print(err)
+
+print("=========== GCM Solver w/ time-indep. errors (Scipy.optimization) ===================")
+
+try:
+    tigcm = TimeIndepErrorGCMSolver(y, time, degree)
+    tibeta_opt, tiR_opt, tiD_opt = tigcm.solve()
+
+    plot(tibeta_opt, time, y, degree)
+
+    tisigma = tiR_opt + tigcm.Z @ tiD_opt @ tigcm.Z.T
+    print("Sigma:\n{}".format(tisigma))
 except AssertionError as err:
     print(err)
