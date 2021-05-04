@@ -86,9 +86,12 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS'):
+    def solve(self, method='BFGS', verbose=True, force_solver=False):
 
-        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
+        if not force_solver:
+            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
+        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
+            print('WARNING: Identifiability problem with degrees of freedom')
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -99,16 +102,16 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':True})
+            options={'maxiter':1000, 'disp':verbose})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':True})
+            options={'maxfun':1000, 'disp':verbose})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
         theta_opt = optimize_res.x
-        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
-        print(optimize_res.message)
+        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+            print(optimize_res.message)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -163,9 +166,12 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS'):
+    def solve(self, method='BFGS', verbose=True, force_solver=False):
 
-        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
+        if not force_solver:
+            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
+        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
+            print('WARNING: Identifiability problem with degrees of freedom')
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -176,16 +182,16 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':True})
+            options={'maxiter':1000, 'disp':verbose})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':True})
+            options={'maxfun':1000, 'disp':verbose})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
         theta_opt = optimize_res.x
-        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
-        print(optimize_res.message)
+        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+            print(optimize_res.message)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -241,9 +247,12 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS'):
+    def solve(self, method='BFGS', verbose=True, force_solver=False):
 
-        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
+        if not force_solver:
+            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
+        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
+            print('WARNING: Identifiability problem with degrees of freedom')
 
         # initial guess for the optimization
         beta_0 = np.zeros((self.p,1))
@@ -254,16 +263,16 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         # maximize likelihood -- default
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':True})
+            options={'maxiter':1000, 'disp':verbose})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':True})
+            options={'maxfun':1000, 'disp':verbose})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
         theta_opt = optimize_res.x
-        print("Log-likelihood maximization succeeded: {}".format(optimize_res.success))
-        print(optimize_res.message)
+        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+            print(optimize_res.message)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -369,9 +378,12 @@ class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInform
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS'):
+    def solve(self, method='BFGS', verbose=True, force_solver=False):
 
-        assert all([x > 0 for x in self.degrees_of_freedom(verbose=True)]), "Identifiability problem: you have more parameters than 'information'"
+        if not force_solver:
+            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
+        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
+            print('WARNING: Identifiability problem with degrees of freedom')
 
         # initial guess for the optimization
         beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
@@ -384,18 +396,18 @@ class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInform
         self.not_pos_def_warning_flag = False
         if method == 'BFGS':
             optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':True})
+            options={'maxiter':1000, 'disp':verbose})
         elif method == 'TNC':
             optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':True})
+            options={'maxfun':1000, 'disp':verbose})
         else:
             print("'method' {} not recognized!".format(method))
             raise ValueError
         theta_opt = optimize_res.x
+        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+            print(optimize_res.message)
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
-        print("Discrepancy-function (aka FIML) minimization succeeded: {}".format(optimize_res.success))
-        print(optimize_res.message)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
