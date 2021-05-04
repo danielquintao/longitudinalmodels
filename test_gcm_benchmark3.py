@@ -1,4 +1,5 @@
 from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver, UnconstrainedGCMSolver
+from GCM import TimeIndepErrorGCMFullInformationSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
@@ -51,15 +52,15 @@ try:
 except AssertionError as err:
     print(err)
 
-print("=========== GCM Solver w/o constraints on R, D (except for R=cte*I) (Scipy.optimization) ===================")
+print("======= GCM w/ time-indep. errors Full-Information estimator (Scipy.optimization) =====")
 
 try:
-    ugcm = UnconstrainedGCMSolver(y, time, degree)
-    ubeta_opt, uR_opt, uD_opt = ugcm.solve()
+    tifigcm = TimeIndepErrorGCMFullInformationSolver(y, time, degree)
+    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
-    plot(ubeta_opt, time, y, degree)
+    plot(tifibeta_opt, time, y, degree)
 
-    usigma = uR_opt + ugcm.Z @ uD_opt @ ugcm.Z.T
-    print("Sigma:\n{}".format(usigma))
+    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+    print("Sigma:\n{}".format(tifisigma))
 except AssertionError as err:
     print(err)

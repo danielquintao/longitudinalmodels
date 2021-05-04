@@ -1,6 +1,7 @@
 from GCM import GCMSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver, ExtendedAndSimplifiedGCMSolver, TimeIndepErrorExtendedGCMSolver
+from GCM_extended import TimeIndepErrorExtendedGCMFullInformationSolver
 import pandas as pd
 import numpy as np
 from gcm_plot import plot, extended_plot
@@ -61,5 +62,21 @@ try:
 
     tiessigma = tiesR_opt + tiesgcm.Z @ tiesD_opt @ tiesgcm.Z.T
     print("Sigma:\n{}".format(tiessigma))
+except AssertionError as err:
+    print(err)
+
+print("==== Extended GCM Solver (known groups) w/ time-indep. errors Full-Information estimator (Scipy.optimization) ====")
+
+groups = total_data[:,-1:]
+# print(groups)
+
+try:
+    tifiesgcm = TimeIndepErrorExtendedGCMFullInformationSolver(y, groups, time, degree)
+    tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
+
+    extended_plot(tifiesbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+
+    tifiessigma = tifiesR_opt + tifiesgcm.Z @ tifiesD_opt @ tifiesgcm.Z.T
+    print("Sigma:\n{}".format(tifiessigma))
 except AssertionError as err:
     print(err)

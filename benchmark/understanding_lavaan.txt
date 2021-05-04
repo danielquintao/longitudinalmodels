@@ -4,11 +4,13 @@ How to visualize the matrix representation of the model?
 
 
 useful lavaan functions:
+coef(fit) to get the parameters values more directly
 fitted(fit) -- vs -- inspectSampleCov(model, dataset) (the difference between the latter and the former is given by residuals(fit))
 parameterEstimates(fit) & summary(fit) --> view several statistics and results at once
-lavInspect(fit [,with=list]) --> internal representation of the model!
-    - Parameters to be estimated are called 1,2,3,...
+lavInspect(fit [,what='list']) --> internal representation of the model!
+    - Parameters to be estimated are called 1,2,3,... (if what='partable', non-zero vals include fixed params)
     - columns are mean structs, triangular matrices are cov matrices, others are relations 'a -> b'
+    - other VERY USEFUL options for 'what' can be found in https://www.rdocumentation.org/packages/lavaan/versions/0.6-8/topics/lavInspect
 AIC(fit), BIC(fit), fitMeasures(fit) --> more precise statistics
 
 How does lavaan compute the MLE (and related stuff):
@@ -19,4 +21,7 @@ How does lavaan compute the MLE (and related stuff):
   If 'extra' is TRUE and the Sigma.hat is NOT positive definite (which is checked as 
   "some eigenvalue is practically zero" || sum(eigenvalues) == 0), then lavaan computes the
   generalized inverse (with MASS::ginv) and set Sigma.inv to this value, sets the log det as
-  log(.Machine$double.eps), and sets the flag "po" to FALSE
+  log(.Machine$double.eps), and sets the flag "po" to FALSE. Actually, it looks like this 
+  pseudoinverse and this log det of log(.Machine$double.eps) make no difference at all for
+  the estimator option "ML" (see estimator.ML() in lav_objective.R) checks for the flag "po"
+  and returns Inf if this is FALSE.

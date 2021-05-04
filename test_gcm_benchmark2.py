@@ -1,4 +1,5 @@
 from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
+from GCM import TimeIndepErrorGCMFullInformationSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
@@ -48,5 +49,18 @@ try:
 
     tisigma = tiR_opt + tigcm.Z @ tiD_opt @ tigcm.Z.T
     print("Sigma:\n{}".format(tisigma))
+except AssertionError as err:
+    print(err)
+
+print("======= GCM w/ time-indep. errors Full-Information estimator (Scipy.optimization) =====")
+
+try:
+    tifigcm = TimeIndepErrorGCMFullInformationSolver(y, time, degree)
+    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+
+    plot(tifibeta_opt, time, y, degree)
+
+    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+    print("Sigma:\n{}".format(tifisigma))
 except AssertionError as err:
     print(err)
