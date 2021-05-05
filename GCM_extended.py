@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.linalg as linalg
 import scipy.optimize as optimize
+from optimization_wrapper import gcm_minimizer, gcm_FIML_minimizer
 from numpy.linalg import det, inv, eigvals, pinv
 from matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
 from gcm_plot import plot
@@ -93,25 +94,27 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
-        # initial guess for the optimization
-        beta_0 = np.zeros((self.p,1))
-        R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
-        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
-        theta_0 = np.concatenate((beta_0.flatten(), R_upper0, D_upper0))
+        # # initial guess for the optimization
+        # beta_0 = np.zeros((self.p,1))
+        # R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
+        # D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        # theta_0 = np.concatenate((beta_0.flatten(), R_upper0, D_upper0))
 
-        # maximize likelihood -- default
-        if method == 'BFGS':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':verbose})
-        elif method == 'TNC':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':verbose})
-        else:
-            print("'method' {} not recognized!".format(method))
-            raise ValueError
-        theta_opt = optimize_res.x
-        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
-            print(optimize_res.message)
+        # # maximize likelihood -- default
+        # if method == 'BFGS':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+        #     options={'maxiter':1000, 'disp':verbose})
+        # elif method == 'TNC':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+        #     options={'maxfun':1000, 'disp':verbose})
+        # else:
+        #     print("'method' {} not recognized!".format(method))
+        #     raise ValueError
+        # theta_opt = optimize_res.x
+        # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+        #     print(optimize_res.message)
+
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,(self.T,self.T),(self.k,self.k)], verbose=verbose)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -173,25 +176,27 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
-        # initial guess for the optimization
-        beta_0 = np.zeros((self.p,1))
-        R_diag = np.random.rand(self.T)
-        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
-        theta_0 = np.concatenate((beta_0.flatten(), R_diag, D_upper0))
+        # # initial guess for the optimization
+        # beta_0 = np.zeros((self.p,1))
+        # R_diag = np.random.rand(self.T)
+        # D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        # theta_0 = np.concatenate((beta_0.flatten(), R_diag, D_upper0))
 
-        # maximize likelihood -- default
-        if method == 'BFGS':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':verbose})
-        elif method == 'TNC':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':verbose})
-        else:
-            print("'method' {} not recognized!".format(method))
-            raise ValueError
-        theta_opt = optimize_res.x
-        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
-            print(optimize_res.message)
+        # # maximize likelihood -- default
+        # if method == 'BFGS':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+        #     options={'maxiter':1000, 'disp':verbose})
+        # elif method == 'TNC':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+        #     options={'maxfun':1000, 'disp':verbose})
+        # else:
+        #     print("'method' {} not recognized!".format(method))
+        #     raise ValueError
+        # theta_opt = optimize_res.x
+        # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+        #     print(optimize_res.message)
+
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,self.T,(self.k,self.k)], verbose=verbose)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -254,25 +259,27 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
-        # initial guess for the optimization
-        beta_0 = np.zeros((self.p,1))
-        R_sigma0 = np.random.rand(1) + 0.00000001 # strictly positive
-        D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
-        theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_upper0))
+        # # initial guess for the optimization
+        # beta_0 = np.zeros((self.p,1))
+        # R_sigma0 = np.random.rand(1) + 0.00000001 # strictly positive
+        # D_upper0 = np.random.rand(int(self.k*(self.k+1)/2))
+        # theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_upper0))
 
-        # maximize likelihood -- default
-        if method == 'BFGS':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':verbose})
-        elif method == 'TNC':
-            optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':verbose})
-        else:
-            print("'method' {} not recognized!".format(method))
-            raise ValueError
-        theta_opt = optimize_res.x
-        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
-            print(optimize_res.message)
+        # # maximize likelihood -- default
+        # if method == 'BFGS':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='BFGS',
+        #     options={'maxiter':1000, 'disp':verbose})
+        # elif method == 'TNC':
+        #     optimize_res = optimize.minimize(self.minus_l, theta_0, jac='3-point', method='TNC',
+        #     options={'maxfun':1000, 'disp':verbose})
+        # else:
+        #     print("'method' {} not recognized!".format(method))
+        #     raise ValueError
+        # theta_opt = optimize_res.x
+        # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+        #     print(optimize_res.message)
+
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,1,(self.k,self.k)], verbose=verbose)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -321,7 +328,105 @@ class ParentExtendedGCMFullInformationSolver():
         for i in range(1,degree+1):
             Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
         self.Z = Z
-    
+
+class DiagExtendedGCMFullInformationSolver(ParentExtendedGCMFullInformationSolver):
+    def __init__(self, y, groups, timesteps, degree):
+        super().__init__(y, groups, timesteps, degree)
+
+    def discrepancy(self, theta):
+        """Discrepancy funcion (Preacher chap.1), a.k.a. Full-Information ML (Bollen, Kolenikov)
+           We extended it to groups by checking how it happens in SEM (we based on lavaan)
+
+        Args:
+            theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
+                            [beta, R, D]
+                            Note: In order to recover the original D and R, p and T must be known globally
+
+        Returns:
+            scalar: discrepancy function (FIML) for theta under the GCM model; The lower, the better
+        """
+        # recover beta, R, D:
+        beta = theta[0:self.p].reshape(-1,1) # column
+        eta = beta[0:self.k] # main coefficients
+        w = beta[self.k:].reshape(self.N_groups, self.k).T # Attention: reshape(N_groups,k).T is NOT the same as reshape(k,N_groups)
+        R = np.eye(self.T) * theta[self.p:self.p+self.T]
+        D_upper = flattened2triangular(theta[self.p+self.T:], self.k)
+        D = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+        # Sigma_hat, mu_hat
+        Sigma_hat = np.zeros((self.T+self.N_groups,self.T+self.N_groups))
+        Sigma_hat[0:self.T,0:self.T] = R + self.Z @ (D + w @ self.x_cov @ w.T ) @ self.Z.T
+        Sigma_hat[self.T:,0:self.T] = self.x_cov @ w.T @ self.Z.T
+        Sigma_hat[0:self.T,self.T:] = self.Z @ w @ self.x_cov
+        Sigma_hat[self.T:,self.T:] = self.x_cov
+        mu_hat = np.zeros(self.T+self.N_groups)
+        mu_hat[0:self.T] = (self.Z @ (eta + w @ self.x_bar.reshape(-1,1))).flatten()
+        mu_hat[self.T:] = self.x_bar
+        # check if Sigma_hat is positive-definite. We do it like lavaan
+        ev = eigvals(Sigma_hat)
+        if any(ev < np.sqrt(np.finfo(Sigma_hat.dtype).eps)) or sum(ev) == 0:
+            self.not_pos_def_warning_flag = True
+            return np.inf
+        else:
+            inv_sigma_hat = inv(Sigma_hat)
+            log_det_sigma_hat = np.log(det(Sigma_hat))
+        f = (log_det_sigma_hat - np.log(det(self.S)) + 
+        np.trace(self.S @ inv_sigma_hat) + 
+        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - 
+        self.T - self.N_groups)
+        if f < 0:
+            return 0 # the discrepancy func should be always non-negative; lavaan does this as well
+        return f
+
+    def degrees_of_freedom(self, verbose=False):
+        df_beta = self.T + self.T*self.N_groups - self.p
+        df_vars_covars = self.T*(self.T+1)//2 - self.T - self.k*(self.k+1)//2
+        if verbose:
+            print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
+        return df_beta, df_vars_covars
+
+    def solve(self, method='BFGS', verbose=True, force_solver=False):
+
+        if not force_solver:
+            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
+        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
+            print('WARNING: Identifiability problem with degrees of freedom')
+
+        # # initial guess for the optimization
+        # beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
+        # R_sigma0 = np.random.rand(T)
+        # temp = np.random.rand(self.k, self.k) + 0.0001*np.ones((self.k, self.k))
+        # D_0 = (temp.T @ temp)[np.triu_indices(self.k)].flatten() # make D_0 definite-positive
+        # theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_0))
+
+        # minimize discrepancy
+        self.not_pos_def_warning_flag = False
+        # if method == 'BFGS':
+        #     optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='BFGS',
+        #     options={'maxiter':1000, 'disp':verbose})
+        # elif method == 'TNC':
+        #     optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='TNC',
+        #     options={'maxfun':1000, 'disp':verbose})
+        # else:
+        #     print("'method' {} not recognized!".format(method))
+        #     raise ValueError
+        # theta_opt = optimize_res.x
+        # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+        #     print(optimize_res.message)
+        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        if self.not_pos_def_warning_flag:
+            print("WARNING: We encountered positive-definiteness problems during optimization.")
+
+        # recover optimal beta, R, D
+        beta_opt = theta_opt[0:self.p]
+        R_opt = np.eye(self.T) * theta_opt[self.p:self.p+self.T]
+        D_upper = flattened2triangular(theta_opt[self.p+self.T:], self.k)
+        D_opt = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+        print("R", R_opt)
+        print("D", D_opt)
+
+        return beta_opt, R_opt, D_opt
+
 class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInformationSolver):
     def __init__(self, y, groups, timesteps, degree):
         super().__init__(y, groups, timesteps, degree)
@@ -385,27 +490,28 @@ class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInform
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
-        # initial guess for the optimization
-        beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
-        R_sigma0 = np.random.rand(1) + 0.0001 # strictly positive
-        temp = np.random.rand(self.k, self.k) + 0.0001*np.ones((self.k, self.k))
-        D_0 = (temp.T @ temp)[np.triu_indices(self.k)].flatten() # make D_0 definite-positive
-        theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_0))
+        # # initial guess for the optimization
+        # beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
+        # R_sigma0 = np.random.rand(1) + 0.0001 # strictly positive
+        # temp = np.random.rand(self.k, self.k) + 0.0001*np.ones((self.k, self.k))
+        # D_0 = (temp.T @ temp)[np.triu_indices(self.k)].flatten() # make D_0 definite-positive
+        # theta_0 = np.concatenate((beta_0.flatten(), R_sigma0, D_0))
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
-        if method == 'BFGS':
-            optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='BFGS',
-            options={'maxiter':1000, 'disp':verbose})
-        elif method == 'TNC':
-            optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='TNC',
-            options={'maxfun':1000, 'disp':verbose})
-        else:
-            print("'method' {} not recognized!".format(method))
-            raise ValueError
-        theta_opt = optimize_res.x
-        if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
-            print(optimize_res.message)
+        # if method == 'BFGS':
+        #     optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='BFGS',
+        #     options={'maxiter':1000, 'disp':verbose})
+        # elif method == 'TNC':
+        #     optimize_res = optimize.minimize(self.discrepancy, theta_0, jac='3-point', method='TNC',
+        #     options={'maxfun':1000, 'disp':verbose})
+        # else:
+        #     print("'method' {} not recognized!".format(method))
+        #     raise ValueError
+        # theta_opt = optimize_res.x
+        # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
+        #     print(optimize_res.message)
+        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
 

@@ -1,8 +1,8 @@
 from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMFullInformationSolver
+from GCM import TimeIndepErrorGCMFullInformationSolver, DiagGCMFullInformationSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver, ExtendedAndSimplifiedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import TimeIndepErrorExtendedGCMFullInformationSolver
+from GCM_extended import TimeIndepErrorExtendedGCMFullInformationSolver, DiagExtendedGCMFullInformationSolver
 import pandas as pd
 import numpy as np
 from gcm_plot import plot, extended_plot
@@ -66,6 +66,19 @@ try:
 
     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
     print("Sigma:\n{}".format(tifisigma))
+except AssertionError as err:
+    print(err)
+
+print("======= GCM w/ diagonal R Full-Information estimator (Scipy.optimization) =====")
+
+try:
+    drfigcm = DiagGCMFullInformationSolver(y, time, degree)
+    drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
+
+    plot(drfibeta_opt, time, y, degree)
+
+    drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
+    print("Sigma:\n{}".format(drfisigma))
 except AssertionError as err:
     print(err)
 
@@ -145,5 +158,21 @@ try:
 
     tifiessigma = tifiesR_opt + tifiesgcm.Z @ tifiesD_opt @ tifiesgcm.Z.T
     print("Sigma:\n{}".format(tifiessigma))
+except AssertionError as err:
+    print(err)
+
+print("==== Extended GCM Solver (known groups) w/ diagonal R Full-Information estimator (Scipy.optimization) ====")
+
+groups = total_data[:,-2:]
+# print(groups)
+
+try:
+    drfiesgcm = DiagExtendedGCMFullInformationSolver(y, groups, time, degree)
+    drfiesbeta_opt, drfiesR_opt, drfiesD_opt = drfiesgcm.solve()
+
+    extended_plot(drfiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
+
+    drfiessigma = drfiesR_opt + drfiesgcm.Z @ drfiesD_opt @ drfiesgcm.Z.T
+    print("Sigma:\n{}".format(drfiessigma))
 except AssertionError as err:
     print(err)

@@ -1,5 +1,5 @@
 from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMFullInformationSolver
+from GCM import TimeIndepErrorGCMFullInformationSolver, DiagGCMFullInformationSolver
 from GCM_cvxpy_failed import GCMSolver_CVXPY
 from GCM_extended import ExtendedGCMSolver
 import pandas as pd
@@ -62,5 +62,18 @@ try:
 
     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
     print("Sigma:\n{}".format(tifisigma))
+except AssertionError as err:
+    print(err)
+
+print("======= GCM w/ diagonal R Full-Information estimator (Scipy.optimization) =====")
+
+try:
+    drfigcm = DiagGCMFullInformationSolver(y, time, degree)
+    drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
+
+    plot(drfibeta_opt, time, y, degree)
+
+    drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
+    print("Sigma:\n{}".format(drfisigma))
 except AssertionError as err:
     print(err)

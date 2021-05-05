@@ -15,18 +15,27 @@
 3- Next steps:
     - implement FIML estimator 
       - no groups -- OK; same results as lavaan (TODO -> add the 'if f < 0 return 0' as in lavaan and re-test)
-      - with groups -- DOING...
+      - with groups -- OK
       - If have explicit formulas for jacobian wrt FIML, use it!
 
 4-  implement mult. start vals (either to "search the global max" or to state that the model is not
     identified if there exist non-global maxima - "Marc Lavielle, Leon Aarons. What do we mean by
     identifiability in mixed effects models?. 2016.hal-01251986")
 
+4B- add definite-positivity check for R and D at the end of optimization (i.e. for the final result)
+
 5- Add statistics (chi2, z-value, etc)
 
 6- Add a 'identifiability check' using the lemmas in Wei Wang 'Identifiability of Linear Mixed
    Effects Models' or simply chose the R structure that will always garantee identifiability.
    Do not forget to remove the initial solver where R could be no matter what pos. def. matrix
+   
+   More specifically: 
+   add check that Z is full rank? (or equivalently, that there are no repeated terms in time_steps)
+   We can also check if the eq. (4) of Wang's "Identifiability of [LME] models" has a non-trivial solution
+   (We might need matrix vectorization and a smart transformation for the transformation from R^(nxn)->R^(nxn) to R^n->R^n)
+   Alternatively, (4) only has trivial solutions when rank(R-R*) > k for all R, R* (Theorem 4.2 of same paper).
+   In the case of R=sigma*Identity, this theorem says that it's always identifiable! (corollary 4.3)
 
 7- Implement method to approximate Fisher Information Matrix
    "Marc Lavielle, Leon Aarons. What do we mean by identifiability in mixed effects models?")
