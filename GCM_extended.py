@@ -425,6 +425,9 @@ class DiagExtendedGCMFullInformationSolver(ParentExtendedGCMFullInformationSolve
         print("R", R_opt)
         print("D", D_opt)
 
+        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
+        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
         return beta_opt, R_opt, D_opt
 
 class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInformationSolver):
@@ -525,8 +528,7 @@ class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInform
         print("R", R_opt)
         print("D", D_opt)
 
+        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
+        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
         return beta_opt, R_opt, D_opt
-
-# TODO if I implement the "diagonal R"-model with FIML, remember to initialize R_0 (and D_0) positive-definite
-#      (or to consider other possibilities to make it sure to start well, such as multiple initialization or Nelder-Meads)
-

@@ -20,9 +20,11 @@
 
 4-  implement mult. start vals (either to "search the global max" or to state that the model is not
     identified if there exist non-global maxima - "Marc Lavielle, Leon Aarons. What do we mean by
-    identifiability in mixed effects models?. 2016.hal-01251986")
+    identifiability in mixed effects models?. 2016.hal-01251986") - MULTISTART IMPLEMENTED
 
 4B- add definite-positivity check for R and D at the end of optimization (i.e. for the final result)
+    -- DONE (only for implementation with discrepancy func; for the MLE one we don't need it because
+    teh representation enforces definite-positivity)
 
 5- Add statistics (chi2, z-value, etc)
 
