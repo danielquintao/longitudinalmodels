@@ -16,7 +16,7 @@
     - implement FIML estimator 
       - no groups -- OK; same results as lavaan (TODO -> add the 'if f < 0 return 0' as in lavaan and re-test)
       - with groups -- OK
-      - If have explicit formulas for jacobian wrt FIML, use it!
+      - If there exist explicit formulas for jacobian wrt FIML, use it!
 
 4-  implement mult. start vals (either to "search the global max" or to state that the model is not
     identified if there exist non-global maxima - "Marc Lavielle, Leon Aarons. What do we mean by
@@ -24,15 +24,16 @@
 
 4B- add definite-positivity check for R and D at the end of optimization (i.e. for the final result)
     -- DONE (only for implementation with discrepancy func; for the MLE one we don't need it because
-    teh representation enforces definite-positivity)
+    teh representation enforces semi-definite positivity)
 
 5- Add statistics (chi2, z-value, etc)
+   Before that: Add the factor T log(2*pi) to the MLE (IMPORTANT)
 
 6- Add a 'identifiability check' using the lemmas in Wei Wang 'Identifiability of Linear Mixed
    Effects Models' or simply chose the R structure that will always garantee identifiability.
    Do not forget to remove the initial solver where R could be no matter what pos. def. matrix
    
-   More specifically: 
+   More specifically: (IMPORTANT)
    add check that Z is full rank? (or equivalently, that there are no repeated terms in time_steps)
    We can also check if the eq. (4) of Wang's "Identifiability of [LME] models" has a non-trivial solution
    (We might need matrix vectorization and a smart transformation for the transformation from R^(nxn)->R^(nxn) to R^n->R^n)
@@ -53,3 +54,5 @@
 10- new datasets, more tests
 
 11- fix header comments and git push
+
+/!\ for statistical tests, fiz likelihood formula (add the term N*log(2@pi), divide sum by 2, etc)
