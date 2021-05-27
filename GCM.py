@@ -94,7 +94,7 @@ class GCMSolver(ParentGCMSolver):
         # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
         #     print(optimize_res.message)
 
-        theta_opt = gcm_minimizer(self.minus_l, [self.p,(self.T,self.T),(self.k,self.k)], verbose=verbose)
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,(self.T,self.T),(self.k,self.k)], method=method, verbose=verbose)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -233,7 +233,7 @@ class SimplifiedGCMSolver(ParentGCMSolver):
         # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
         #     print(optimize_res.message)
 
-        theta_opt = gcm_minimizer(self.minus_l, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,self.T,(self.k,self.k)], method=method, verbose=verbose)
 
 
         # recover optimal beta, R, D
@@ -322,7 +322,7 @@ class TimeIndepErrorGCMSolver(ParentGCMSolver):
         # if not verbose: # if verbose, optimization status already printed by Scipy's optimize.minimize
         #     print(optimize_res.message)
 
-        theta_opt = gcm_minimizer(self.minus_l, [self.p,1,(self.k,self.k)], verbose=verbose)
+        theta_opt = gcm_minimizer(self.minus_l, [self.p,1,(self.k,self.k)], method=method, verbose=verbose)
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -484,7 +484,7 @@ class DiagGCMFullInformationSolver(ParentGCMFullInformationSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS', verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False):
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
@@ -579,7 +579,7 @@ class TimeIndepErrorGCMFullInformationSolver(ParentGCMFullInformationSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, method='BFGS', verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False):
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
