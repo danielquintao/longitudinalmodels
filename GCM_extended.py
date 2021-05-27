@@ -71,14 +71,16 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         D = D_upper.T @ D_upper
         # compute likelihood:
         variance = R + self.Z @ (D @ self.Z.T)
+        inv = linalg.inv(variance)
         # if linalg.det(variance) < 0:
         #     print("det(variance matrix) = {}".format(linalg.det(variance)))
         first_term = -(self.N/2) * np.log(linalg.det(variance))
         second_term = 0
         for i in range(self.N):
-            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ linalg.inv(variance) @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
+            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ inv @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
-        return -(first_term + second_term)
+        const = - (1/2) * self.N * self.T * np.log(2*np.pi)
+        return -(first_term + second_term + const)
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -153,14 +155,16 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
         D = D_upper.T @ D_upper
         # compute likelihood:
         variance = R + self.Z @ (D @ self.Z.T)
+        inv = linalg.inv(variance)
         # if linalg.det(variance) < 0:
         #     print("det(variance matrix) = {}".format(linalg.det(variance)))
         first_term = -(self.N/2) * np.log(linalg.det(variance))
         second_term = 0
         for i in range(self.N):
-            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ linalg.inv(variance) @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
+            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ inv @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
-        return -(first_term + second_term)
+        const = - (1/2) * self.N * self.T * np.log(2*np.pi)
+        return -(first_term + second_term + const)
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -236,14 +240,16 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         D = D_upper.T @ D_upper
         # compute likelihood:
         variance = R + self.Z @ (D @ self.Z.T)
+        inv = linalg.inv(variance)
         # if linalg.det(variance) < 0:
         #     print("det(variance matrix) = {}".format(linalg.det(variance)))
         first_term = -(self.N/2) * np.log(linalg.det(variance))
         second_term = 0
         for i in range(self.N):
-            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ linalg.inv(variance) @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
+            second_term += (self.y[i].reshape(-1,1) - self.X[i] @ beta).T @ inv @ (self.y[i].reshape(-1,1) - self.X[i] @ beta)
         second_term = second_term[0] * -1/2 # "[0]" because output of loop above is 1x1 2D ndarray
-        return -(first_term + second_term)
+        const = - (1/2) * self.N * self.T * np.log(2*np.pi)
+        return -(first_term + second_term + const)
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
