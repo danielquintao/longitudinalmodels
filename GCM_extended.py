@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg as linalg
 import scipy.optimize as optimize
 from optimization_wrapper import gcm_minimizer, gcm_FIML_minimizer
-from numpy.linalg import det, inv, eigvals, pinv
+from numpy.linalg import det, inv, eigvals, pinv, matrix_rank
 from matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
 from gcm_plot import plot
 
@@ -96,6 +96,9 @@ class ExtendedGCMSolver(ParentExtendedGCMSolver):
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
+        if matrix_rank(self.Z) < self.k:
+            print("WARNING: the random effects design matrix is not full-rank")
+
         # # initial guess for the optimization
         # beta_0 = np.zeros((self.p,1))
         # R_upper0 = np.random.rand(int(self.T*(self.T+1)/2))
@@ -179,6 +182,9 @@ class ExtendedAndSimplifiedGCMSolver(ParentExtendedGCMSolver):
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
+
+        if matrix_rank(self.Z) < self.k:
+            print("WARNING: the random effects design matrix is not full-rank")
 
         # # initial guess for the optimization
         # beta_0 = np.zeros((self.p,1))
@@ -265,6 +271,9 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
 
+        if matrix_rank(self.Z) < self.k:
+            print("WARNING: the random effects design matrix is not full-rank")
+
         # # initial guess for the optimization
         # beta_0 = np.zeros((self.p,1))
         # R_sigma0 = np.random.rand(1) + 0.00000001 # strictly positive
@@ -323,8 +332,7 @@ class ParentExtendedGCMFullInformationSolver():
         self.k = degree+1
         self.T = len(timesteps) # time points
         self.time = timesteps
-        # X will be a tensor of shape (N, T, p)
-        # We'll first build a matrix of shape (T, k), e.g.:
+        # Z is a matrix of shape (T, k)
         # [[1,1,1]]
         # [[1,2,4]]
         # [[1,3,9]]
@@ -396,6 +404,9 @@ class DiagExtendedGCMFullInformationSolver(ParentExtendedGCMFullInformationSolve
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
+
+        if matrix_rank(self.Z) < self.k:
+            print("WARNING: the random effects design matrix is not full-rank")
 
         # # initial guess for the optimization
         # beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
@@ -498,6 +509,9 @@ class TimeIndepErrorExtendedGCMFullInformationSolver(ParentExtendedGCMFullInform
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
         elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
             print('WARNING: Identifiability problem with degrees of freedom')
+
+        if matrix_rank(self.Z) < self.k:
+            print("WARNING: the random effects design matrix is not full-rank")
 
         # # initial guess for the optimization
         # beta_0 = np.random.rand(self.p).reshape(-1,1) # np.zeros((self.p,1))
