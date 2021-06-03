@@ -1,8 +1,5 @@
-from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMFullInformationSolver, DiagGCMFullInformationSolver
-from GCM_cvxpy_failed import GCMSolver_CVXPY
-from GCM_extended import ExtendedGCMSolver
-import pandas as pd
+from GCM import DiagGCMSolver, TimeIndepErrorGCMSolver
+from GCM import TimeIndepErrorGCMLavaanLikeSolver, DiagGCMLavaanLikeSolver
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -13,23 +10,23 @@ time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark2_ground_truth.txt
 
 degree = 1 # cf. benchmark2_ground_truth.txt
 
-print("=========== GCM Solver (with Scipy.optimization) ===================")
+# print("=========== GCM Solver (with Scipy.optimization) ===================")
 
-try:
-    gcm = GCMSolver(y, time, degree)
-    beta_opt, R_opt, D_opt = gcm.solve()
+# try:
+#     gcm = GCMSolver(y, time, degree)
+#     beta_opt, R_opt, D_opt = gcm.solve()
 
-    plot(beta_opt, time, y, degree)
+#     plot(beta_opt, time, y, degree)
 
-    sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
-    print("Sigma:\n{}".format(sigma))
-except AssertionError as err:
-    print(err)
+#     sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
+#     print("Sigma:\n{}".format(sigma))
+# except AssertionError as err:
+#     print(err)
 
 print("=========== GCM Solver with diagonal R (Scipy.optimization) ===================")
 
 try:
-    sgcm = SimplifiedGCMSolver(y, time, degree)
+    sgcm = DiagGCMSolver(y, time, degree)
     sbeta_opt, sR_opt, sD_opt = sgcm.solve()
 
     plot(sbeta_opt, time, y, degree)
@@ -52,28 +49,28 @@ try:
 except AssertionError as err:
     print(err)
 
-print("======= GCM w/ time-indep. errors Full-Information estimator (Scipy.optimization) =====")
+# print("======= GCM w/ time-indep. errors lavaan-like estimator (Scipy.optimization) =====")
 
-try:
-    tifigcm = TimeIndepErrorGCMFullInformationSolver(y, time, degree)
-    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+# try:
+#     tifigcm = TimeIndepErrorGCMLavaanLikeSolver(y, time, degree)
+#     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
-    plot(tifibeta_opt, time, y, degree)
+#     plot(tifibeta_opt, time, y, degree)
 
-    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
-    print("Sigma:\n{}".format(tifisigma))
-except AssertionError as err:
-    print(err)
+#     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+#     print("Sigma:\n{}".format(tifisigma))
+# except AssertionError as err:
+#     print(err)
 
-print("======= GCM w/ diagonal R Full-Information estimator (Scipy.optimization) =====")
+# print("======= GCM w/ diagonal R lavaan-like estimator (Scipy.optimization) =====")
 
-try:
-    drfigcm = DiagGCMFullInformationSolver(y, time, degree)
-    drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
+# try:
+#     drfigcm = DiagGCMLavaanLikeSolver(y, time, degree)
+#     drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
 
-    plot(drfibeta_opt, time, y, degree)
+#     plot(drfibeta_opt, time, y, degree)
 
-    drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
-    print("Sigma:\n{}".format(drfisigma))
-except AssertionError as err:
-    print(err)
+#     drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
+#     print("Sigma:\n{}".format(drfisigma))
+# except AssertionError as err:
+#     print(err)

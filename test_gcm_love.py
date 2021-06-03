@@ -1,9 +1,7 @@
-from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMFullInformationSolver, DiagGCMFullInformationSolver
-from GCM_cvxpy_failed import GCMSolver_CVXPY
-from GCM_extended import ExtendedGCMSolver, ExtendedAndSimplifiedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import TimeIndepErrorExtendedGCMFullInformationSolver, DiagExtendedGCMFullInformationSolver
-import pandas as pd
+from GCM import DiagGCMSolver, TimeIndepErrorGCMSolver
+from GCM import TimeIndepErrorGCMLavaanLikeSolver, DiagGCMLavaanLikeSolver
+from GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
+from GCM_extended import TimeIndepErrorExtendedGCMLavaanLikeSolver, DiagExtendedGCMLavaanLikeSolver
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -14,25 +12,25 @@ time = np.array([-3,3,9,36])
 
 degree = 1
 
-print("=========== GCM Solver (with Scipy.optimization) ===================")
+# print("=========== GCM Solver (with Scipy.optimization) ===================")
 
-try:
-    gcm = GCMSolver(y, time, degree)
-    beta_opt, R_opt, D_opt = gcm.solve()
+# try:
+#     gcm = GCMSolver(y, time, degree)
+#     beta_opt, R_opt, D_opt = gcm.solve()
 
-    plot(beta_opt, time, y, degree)
+#     plot(beta_opt, time, y, degree)
 
-    sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
-    print("Sigma matrix:\n{}".format(sigma))
+#     sigma = R_opt + gcm.Z @ D_opt @ gcm.Z.T
+#     print("Sigma matrix:\n{}".format(sigma))
 
-    # gcm.multisolve()
-except AssertionError as err:
-    print(err)
+#     # gcm.multisolve()
+# except AssertionError as err:
+#     print(err)
 
 print("=========== GCM Solver with diagonal R (Scipy.optimization) ===================")
 
 try:
-    sgcm = SimplifiedGCMSolver(y, time, degree)
+    sgcm = DiagGCMSolver(y, time, degree)
     sbeta_opt, sR_opt, sD_opt = sgcm.solve()
 
     plot(sbeta_opt, time, y, degree)
@@ -56,40 +54,31 @@ except AssertionError as err:
     print(err)
 
 
-print("======= GCM w/ time-indep. errors Full-Information estimator (Scipy.optimization) =====")
+# print("======= GCM w/ time-indep. errors lavaan-like estimator (Scipy.optimization) =====")
 
-try:
-    tifigcm = TimeIndepErrorGCMFullInformationSolver(y, time, degree)
-    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+# try:
+#     tifigcm = TimeIndepErrorGCMLavaanLikeSolver(y, time, degree)
+#     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
-    plot(tifibeta_opt, time, y, degree)
+#     plot(tifibeta_opt, time, y, degree)
 
-    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
-    print("Sigma:\n{}".format(tifisigma))
-except AssertionError as err:
-    print(err)
+#     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+#     print("Sigma:\n{}".format(tifisigma))
+# except AssertionError as err:
+#     print(err)
 
-print("======= GCM w/ diagonal R Full-Information estimator (Scipy.optimization) =====")
+# print("======= GCM w/ diagonal R lavaan-like estimator (Scipy.optimization) =====")
 
-try:
-    drfigcm = DiagGCMFullInformationSolver(y, time, degree)
-    drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
+# try:
+#     drfigcm = DiagGCMLavaanLikeSolver(y, time, degree)
+#     drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
 
-    plot(drfibeta_opt, time, y, degree)
+#     plot(drfibeta_opt, time, y, degree)
 
-    drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
-    print("Sigma:\n{}".format(drfisigma))
-except AssertionError as err:
-    print(err)
-
-# print("=========== GCM Solver with CVXPY ===================================")
-
-# gcm_cvxpy = GCMSolver_CVXPY(y, time, degree)
-# beta_opt, R_opt, D_opt = gcm_cvxpy.solve()
-
-# plot(beta_opt, time, y, degree)
-
-print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
+#     drfisigma = drfiR_opt + drfigcm.Z @ drfiD_opt @ drfigcm.Z.T
+#     print("Sigma:\n{}".format(drfisigma))
+# except AssertionError as err:
+#     print(err)
 
 # We'll now test the GCM solver with known groups (predictors of fixed slope)
 # In lovedata dataset, the before-before-last column indicates to which of the
@@ -98,16 +87,18 @@ print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 groups = total_data[:,-2:]
 # print(groups)
 
-try:
-    egcm = ExtendedGCMSolver(y, groups, time, degree)
-    ebeta_opt, eR_opt, eD_opt = egcm.solve()
+# print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 
-    extended_plot(ebeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
+# try:
+#     egcm = ExtendedGCMSolver(y, groups, time, degree)
+#     ebeta_opt, eR_opt, eD_opt = egcm.solve()
 
-    esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
-    print("Sigma:\n{}".format(esigma))
-except AssertionError as err:
-    print(err)
+#     extended_plot(ebeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
+
+#     esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
+#     print("Sigma:\n{}".format(esigma))
+# except AssertionError as err:
+#     print(err)
 
 print("==== Extended GCM Solver (known groups) w/ diag. R (Scipy.optimization) ====")
 
@@ -119,7 +110,7 @@ groups = total_data[:,-2:]
 # print(groups)
 
 try:
-    esgcm = ExtendedAndSimplifiedGCMSolver(y, groups, time, degree)
+    esgcm = DiagExtendedGCMSolver(y, groups, time, degree)
     esbeta_opt, esR_opt, esD_opt = esgcm.solve()
 
     extended_plot(esbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
@@ -145,34 +136,34 @@ try:
 except AssertionError as err:
     print(err)
 
-print("==== Extended GCM Solver (known groups) w/ time-indep. errors Full-Information estimator (Scipy.optimization) ====")
+# print("==== Extended GCM Solver (known groups) w/ time-indep. errors lavaan-like estimator (Scipy.optimization) ====")
 
-groups = total_data[:,-2:]
-# print(groups)
+# groups = total_data[:,-2:]
+# # print(groups)
 
-try:
-    tifiesgcm = TimeIndepErrorExtendedGCMFullInformationSolver(y, groups, time, degree)
-    tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
+# try:
+#     tifiesgcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
 
-    extended_plot(tifiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
+#     extended_plot(tifiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
 
-    tifiessigma = tifiesR_opt + tifiesgcm.Z @ tifiesD_opt @ tifiesgcm.Z.T
-    print("Sigma:\n{}".format(tifiessigma))
-except AssertionError as err:
-    print(err)
+#     tifiessigma = tifiesR_opt + tifiesgcm.Z @ tifiesD_opt @ tifiesgcm.Z.T
+#     print("Sigma:\n{}".format(tifiessigma))
+# except AssertionError as err:
+#     print(err)
 
-print("==== Extended GCM Solver (known groups) w/ diagonal R Full-Information estimator (Scipy.optimization) ====")
+# print("==== Extended GCM Solver (known groups) w/ diagonal R lavaan-like estimator (Scipy.optimization) ====")
 
-groups = total_data[:,-2:]
-# print(groups)
+# groups = total_data[:,-2:]
+# # print(groups)
 
-try:
-    drfiesgcm = DiagExtendedGCMFullInformationSolver(y, groups, time, degree)
-    drfiesbeta_opt, drfiesR_opt, drfiesD_opt = drfiesgcm.solve()
+# try:
+#     drfiesgcm = DiagExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     drfiesbeta_opt, drfiesR_opt, drfiesD_opt = drfiesgcm.solve()
 
-    extended_plot(drfiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
+#     extended_plot(drfiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
 
-    drfiessigma = drfiesR_opt + drfiesgcm.Z @ drfiesD_opt @ drfiesgcm.Z.T
-    print("Sigma:\n{}".format(drfiessigma))
-except AssertionError as err:
-    print(err)
+#     drfiessigma = drfiesR_opt + drfiesgcm.Z @ drfiesD_opt @ drfiesgcm.Z.T
+#     print("Sigma:\n{}".format(drfiessigma))
+# except AssertionError as err:
+#     print(err)

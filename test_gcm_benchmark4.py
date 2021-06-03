@@ -1,8 +1,5 @@
-from GCM import GCMSolver
-from GCM_cvxpy_failed import GCMSolver_CVXPY
-from GCM_extended import ExtendedGCMSolver, ExtendedAndSimplifiedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import TimeIndepErrorExtendedGCMFullInformationSolver
-import pandas as pd
+from GCM_extended import TimeIndepErrorExtendedGCMSolver, DiagExtendedGCMSolver
+from GCM_extended import TimeIndepErrorExtendedGCMLavaanLikeSolver
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -15,25 +12,25 @@ time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark4_ground_truth.txt
 
 degree = 2 # cf. benchmark4_ground_truth.txt
 
-print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
+# print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 
-# We'll now test the GCM solver with known groups (predictors of fixed slope)
-# In benchmark1, the last column indicates to which of the
-# 2 available groups the individual belongs, and the two last columns encode it
-# with 1 binary variable: (0,) = group 1, (1,) = group 2
-groups = total_data[:,-1:]
-# print(groups)
+# # We'll now test the GCM solver with known groups (predictors of fixed slope)
+# # In benchmark1, the last column indicates to which of the
+# # 2 available groups the individual belongs, and the two last columns encode it
+# # with 1 binary variable: (0,) = group 1, (1,) = group 2
+# groups = total_data[:,-1:]
+# # print(groups)
 
-try:
-    egcm = ExtendedGCMSolver(y, groups, time, degree)
-    ebeta_opt, eR_opt, eD_opt = egcm.solve()
+# try:
+#     egcm = ExtendedGCMSolver(y, groups, time, degree)
+#     ebeta_opt, eR_opt, eD_opt = egcm.solve()
 
-    extended_plot(ebeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+#     extended_plot(ebeta_opt, time, y, groups, [(0,),(1,)] ,degree)
 
-    esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
-    print("Sigma:\n{}".format(esigma))
-except AssertionError as err:
-    print(err)
+#     esigma = eR_opt + egcm.Z @ eD_opt @ egcm.Z.T
+#     print("Sigma:\n{}".format(esigma))
+# except AssertionError as err:
+#     print(err)
 
 print("==== Extended GCM Solver (known groups) w/ diag. R (Scipy.optimization) ====")
 
@@ -41,7 +38,7 @@ groups = total_data[:,-1:]
 # print(groups)
 
 try:
-    esgcm = ExtendedAndSimplifiedGCMSolver(y, groups, time, degree)
+    esgcm = DiagExtendedGCMSolver(y, groups, time, degree)
     esbeta_opt, esR_opt, esD_opt = esgcm.solve()
 
     extended_plot(esbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
@@ -67,17 +64,17 @@ try:
 except AssertionError as err:
     print(err)
 
-print("=== Extended GCM (known groups) w/ time-indep. errors Full-Information estimator (Scipy.optimization) ====")
+# print("=== Extended GCM (known groups) w/ time-indep. errors lavaan-like estimator (Scipy.optimization) ====")
 
-groups = total_data[:,-1:]
+# groups = total_data[:,-1:]
 
-try:
-    tifigcm = TimeIndepErrorExtendedGCMFullInformationSolver(y, groups, time, degree)
-    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+# try:
+#     tifigcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
-    extended_plot(tifibeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+#     extended_plot(tifibeta_opt, time, y, groups, [(0,),(1,)] ,degree)
 
-    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
-    print("Sigma:\n{}".format(tifisigma))
-except AssertionError as err:
-    print(err)
+#     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+#     print("Sigma:\n{}".format(tifisigma))
+# except AssertionError as err:
+#     print(err)

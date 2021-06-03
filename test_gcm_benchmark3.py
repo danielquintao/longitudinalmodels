@@ -1,8 +1,5 @@
-from GCM import GCMSolver, SimplifiedGCMSolver, TimeIndepErrorGCMSolver, UnconstrainedGCMSolver
-from GCM import TimeIndepErrorGCMFullInformationSolver
-from GCM_cvxpy_failed import GCMSolver_CVXPY
-from GCM_extended import ExtendedGCMSolver
-import pandas as pd
+from GCM import TimeIndepErrorGCMSolver
+from GCM import TimeIndepErrorGCMLavaanLikeSolver
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -52,15 +49,15 @@ try:
 except AssertionError as err:
     print(err)
 
-print("======= GCM w/ time-indep. errors Full-Information estimator (Scipy.optimization) =====")
+# print("======= GCM w/ time-indep. errors lavaan-like estimator (Scipy.optimization) =====")
 
-try:
-    tifigcm = TimeIndepErrorGCMFullInformationSolver(y, time, degree)
-    tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+# try:
+#     tifigcm = TimeIndepErrorGCMLavaanLikeSolver(y, time, degree)
+#     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
-    plot(tifibeta_opt, time, y, degree)
+#     plot(tifibeta_opt, time, y, degree)
 
-    tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
-    print("Sigma:\n{}".format(tifisigma))
-except AssertionError as err:
-    print(err)
+#     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
+#     print("Sigma:\n{}".format(tifisigma))
+# except AssertionError as err:
+#     print(err)
