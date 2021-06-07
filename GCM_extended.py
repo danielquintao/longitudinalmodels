@@ -39,6 +39,8 @@ class ParentExtendedGCMSolver():
             Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
         self.Z = Z
 
+#----------------------------------------------------------------------------------------------#
+
 class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
     def __init__(self, y, groups, timesteps, degree):
         super().__init__(y, groups, timesteps, degree)
@@ -193,40 +195,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
 
 #----------------------------------------------------------------------------------------------#
 
-class ParentExtendedGCMLavaanLikeSolver():
-    def __init__(self, y, groups, timesteps, degree):
-        """Initialize data that's required to fit GCM with FIML (discrepancy) when there are groups.
-
-        Args:
-            y (ndarray): observations : each row an individual, each column a time step
-            groups (binary ndarray): membership of individuals in each group (0 or 1)
-            timesteps (array): time steps, e.g. np.array([0,1,2,3])
-            degree (int): degree of the polynomial to fit
-        """
-        assert len(y) == len(groups)
-        self.mu_bar = np.mean(np.concatenate((y,groups),axis=1), axis=0) # sample mean
-        self.S = np.cov(np.concatenate((y,groups),axis=1), rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)
-        self.x_bar = np.mean(groups, axis=0) # mean of binary vars encoding group membership
-        self.x_cov = np.cov(groups, rowvar=False, bias=True)
-        self.x_cov = np.array([[self.x_cov]]) if self.x_cov.shape == () else self.x_cov # we want 2D-array
-        self.N = len(y)
-        self.N_groups = groups.shape[1] # actually this is not the nb of groups stricto sensu
-        self.p = (degree+1) * (1+self.N_groups)
-        self.k = degree+1
-        self.T = len(timesteps) # time points
-        self.time = timesteps
-        # Z is a matrix of shape (T, k)
-        # [[1,1,1]]
-        # [[1,2,4]]
-        # [[1,3,9]]
-        # [[1,4,16]]
-        # for T=4, degree=2
-        Z = np.ones((self.T,1))
-        for i in range(1,degree+1):
-            Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
-        self.Z = Z
-
-class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMLavaanLikeSolver):
+class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
     def __init__(self, y, groups, timesteps, degree):
         super().__init__(y, groups, timesteps, degree)
 
@@ -311,7 +280,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMLavaanLikeSolver):
 
         return beta_opt, R_opt, D_opt
 
-class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMLavaanLikeSolver):
+class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
     def __init__(self, y, groups, timesteps, degree):
         super().__init__(y, groups, timesteps, degree)
 

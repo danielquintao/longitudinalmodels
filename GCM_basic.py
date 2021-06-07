@@ -21,6 +21,8 @@ class ParentGCMSolver():
         self.X = X
         self.Z = X
 
+#----------------------------------------------------------------------------------------------#
+
 class DiagGCMSolver(ParentGCMSolver):
     def __init__(self, y, timesteps, degree):
         super().__init__(y, timesteps, degree)
@@ -155,22 +157,7 @@ class TimeIndepErrorGCMSolver(ParentGCMSolver):
 
 #----------------------------------------------------------------------------------------------#
 
-class ParentGCMLavaanLikeSolver():
-    def __init__(self, y, timesteps, degree):
-        self.mu_bar = np.mean(y, axis=0) # sample mean
-        self.S = np.cov(y, rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)
-        self.N = len(y)
-        self.p = degree+1 # we include the intercept (coefficient of order 0)
-        self.k = self.p
-        self.T = len(timesteps) # time points
-        self.time = timesteps
-        X = np.ones((self.T,1))
-        for i in range(1,degree+1): # We are using time as parameter -- TODO? custom X per individual
-            X = np.concatenate((X, (self.time**i).reshape(-1,1)), axis=1)
-        self.X = X
-        self.Z = X
-
-class DiagGCMLavaanLikeSolver(ParentGCMLavaanLikeSolver):
+class DiagGCMLavaanLikeSolver(ParentGCMSolver):
     def __init__(self, y, timesteps, degree):
         super().__init__(y, timesteps, degree)
 
@@ -245,7 +232,7 @@ class DiagGCMLavaanLikeSolver(ParentGCMLavaanLikeSolver):
 
         return beta_opt, R_opt, D_opt
 
-class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMLavaanLikeSolver):
+class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMSolver):
     def __init__(self, y, timesteps, degree):
         super().__init__(y, timesteps, degree)
 
