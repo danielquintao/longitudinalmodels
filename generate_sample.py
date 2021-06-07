@@ -1,6 +1,6 @@
 import numpy as np
-from matrix_utils import flattened2triangular
-from gcm_plot import extended_plot, plot
+from utils.matrix_utils import flattened2triangular
+from utils.gcm_plot import extended_plot, plot
 import matplotlib.pyplot as plt
 
 def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
@@ -106,7 +106,7 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
 
 time = np.array([0,0.5,1,1.5])
 degree = 2
-data, beta, R, D = generate_sample(250, time, degree, 2, output_file="playground_data/benchmark5", scaling=[3,1,1])
+data, beta, R, D = generate_sample(250, time, degree, 2, output_file="test/playground_data/benchmark5", scaling=[3,1,1])
 # print(data,'\n',beta,'\n',R,'\n',D)
 extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
 # plot(beta, time, data, degree)

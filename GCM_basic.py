@@ -2,9 +2,9 @@ import numpy as np
 import scipy.linalg as linalg
 from numpy.linalg import det, inv, eigvals, pinv, matrix_rank
 import scipy.optimize as optimize
-from optimization_wrapper import gcm_minimizer, gcm_FIML_minimizer
-from matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
-from gcm_plot import plot
+from utils.optimization_wrapper import gcm_minimizer, gcm_FIML_minimizer
+from utils.matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
+from utils.gcm_plot import plot
 
 class ParentGCMSolver():
     def __init__(self, y, timesteps, degree):

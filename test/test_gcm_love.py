@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from GCM import GCM
 import numpy as np
-from gcm_plot import plot, extended_plot
+from utils.gcm_plot import plot, extended_plot
 
-total_data = np.genfromtxt("playground_data/lovedata.csv", delimiter=",", skip_header=1)
+total_data = np.genfromtxt("test/playground_data/lovedata.csv", delimiter=",", skip_header=1)
 # print(total_data)
 y = total_data[:,0:4] # love scores
 time = np.array([-3,3,9,36])

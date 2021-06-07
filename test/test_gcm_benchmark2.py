@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from GCM import GCM
 import numpy as np
-from gcm_plot import plot, extended_plot
+from utils.gcm_plot import plot, extended_plot
 
-total_data = np.genfromtxt("playground_data/benchmark2_data.csv", delimiter=",", skip_header=0)
+total_data = np.genfromtxt("test/playground_data/benchmark2_data.csv", delimiter=",", skip_header=0)
 # print(total_data)
 y = total_data[:,0:4] # measures in time steps
 time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark2_ground_truth.txt
