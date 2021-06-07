@@ -4,10 +4,9 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import TimeIndepErrorExtendedGCMLavaanLikeSolver
+from GCM import GCM
 import numpy as np
-from gcm_plot import plot, extended_plot
+from gcm_plot import extended_plot
 
 total_data = np.genfromtxt("playground_data/benchmark1_data.csv", delimiter=",", skip_header=0)
 # print(total_data)
@@ -42,7 +41,7 @@ groups = total_data[:,-1:]
 # print(groups)
 
 try:
-    esgcm = DiagExtendedGCMSolver(y, groups, time, degree)
+    esgcm = GCM(y, time, degree, R_struct='diagonal', groups=groups)
     esbeta_opt, esR_opt, esD_opt = esgcm.solve()
 
     extended_plot(esbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
@@ -58,7 +57,7 @@ groups = total_data[:,-1:]
 # print(groups)
 
 try:
-    tiesgcm = TimeIndepErrorExtendedGCMSolver(y, groups, time, degree)
+    tiesgcm = GCM(y, time, degree, R_struct='multiple_identity', groups=groups)
     tiesbeta_opt, tiesR_opt, tiesD_opt = tiesgcm.solve()
 
     extended_plot(tiesbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
@@ -74,7 +73,7 @@ except AssertionError as err:
 # # print(groups)
 
 # try:
-#     tifiesgcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     tifiesgcm = GCM(y, time, degree, groups=groups, lavaan_like=True)
 #     tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
 
 #     extended_plot(tifiesbeta_opt, time, y, groups, [(0,),(1,)] ,degree)

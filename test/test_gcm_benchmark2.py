@@ -4,8 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from GCM import DiagGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMLavaanLikeSolver, DiagGCMLavaanLikeSolver
+from GCM import GCM
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -32,7 +31,7 @@ degree = 1 # cf. benchmark2_ground_truth.txt
 print("=========== GCM Solver with diagonal R (Scipy.optimization) ===================")
 
 try:
-    sgcm = DiagGCMSolver(y, time, degree)
+    sgcm = GCM(y, time, degree, R_struct='diagonal')
     sbeta_opt, sR_opt, sD_opt = sgcm.solve()
 
     plot(sbeta_opt, time, y, degree)
@@ -45,7 +44,7 @@ except AssertionError as err:
 print("=========== GCM Solver w/ time-indep. errors (Scipy.optimization) ===================")
 
 try:
-    tigcm = TimeIndepErrorGCMSolver(y, time, degree)
+    tigcm = GCM(y, time, degree)
     tibeta_opt, tiR_opt, tiD_opt = tigcm.solve()
 
     plot(tibeta_opt, time, y, degree)
@@ -58,7 +57,7 @@ except AssertionError as err:
 # print("======= GCM w/ time-indep. errors lavaan-like estimator (Scipy.optimization) =====")
 
 # try:
-#     tifigcm = TimeIndepErrorGCMLavaanLikeSolver(y, time, degree)
+#     tifigcm = GCM(y, time, degree, lavaan_like=True)
 #     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
 #     plot(tifibeta_opt, time, y, degree)
@@ -71,7 +70,7 @@ except AssertionError as err:
 # print("======= GCM w/ diagonal R lavaan-like estimator (Scipy.optimization) =====")
 
 # try:
-#     drfigcm = DiagGCMLavaanLikeSolver(y, time, degree)
+#     drfigcm = GCM(y, time, degree, R_struct='diagonal', lavaan_like=True)
 #     drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
 
 #     plot(drfibeta_opt, time, y, degree)

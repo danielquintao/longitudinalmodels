@@ -4,10 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from GCM import DiagGCMSolver, TimeIndepErrorGCMSolver
-from GCM import TimeIndepErrorGCMLavaanLikeSolver, DiagGCMLavaanLikeSolver
-from GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import TimeIndepErrorExtendedGCMLavaanLikeSolver, DiagExtendedGCMLavaanLikeSolver
+from GCM import GCM
 import numpy as np
 from gcm_plot import plot, extended_plot
 
@@ -36,7 +33,7 @@ degree = 1
 print("=========== GCM Solver with diagonal R (Scipy.optimization) ===================")
 
 try:
-    sgcm = DiagGCMSolver(y, time, degree)
+    sgcm = GCM(y, time, degree, R_struct='diagonal')
     sbeta_opt, sR_opt, sD_opt = sgcm.solve()
 
     plot(sbeta_opt, time, y, degree)
@@ -49,7 +46,7 @@ except AssertionError as err:
 print("=========== GCM Solver w/ time-indep. errors (Scipy.optimization) ===================")
 
 try:
-    tigcm = TimeIndepErrorGCMSolver(y, time, degree)
+    tigcm = GCM(y, time, degree)
     tibeta_opt, tiR_opt, tiD_opt = tigcm.solve()
 
     plot(tibeta_opt, time, y, degree)
@@ -63,7 +60,7 @@ except AssertionError as err:
 # print("======= GCM w/ time-indep. errors lavaan-like estimator (Scipy.optimization) =====")
 
 # try:
-#     tifigcm = TimeIndepErrorGCMLavaanLikeSolver(y, time, degree)
+#     tifigcm = GCM(y, time, degree, lavaan_like=True)
 #     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
 
 #     plot(tifibeta_opt, time, y, degree)
@@ -76,7 +73,7 @@ except AssertionError as err:
 # print("======= GCM w/ diagonal R lavaan-like estimator (Scipy.optimization) =====")
 
 # try:
-#     drfigcm = DiagGCMLavaanLikeSolver(y, time, degree)
+#     drfigcm = GCM(y, time, degree, R_struct='diagonal', lavaan_like=True)
 #     drfibeta_opt, drfiR_opt, drfiD_opt = drfigcm.solve()
 
 #     plot(drfibeta_opt, time, y, degree)
@@ -116,7 +113,7 @@ groups = total_data[:,-2:]
 # print(groups)
 
 try:
-    esgcm = DiagExtendedGCMSolver(y, groups, time, degree)
+    esgcm = GCM(y, time, degree, R_struct='diagonal', groups=groups)
     esbeta_opt, esR_opt, esD_opt = esgcm.solve()
 
     extended_plot(esbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
@@ -132,7 +129,7 @@ groups = total_data[:,-2:]
 # print(groups)
 
 try:
-    tiesgcm = TimeIndepErrorExtendedGCMSolver(y, groups, time, degree)
+    tiesgcm = GCM(y, time, degree, groups=groups)
     tiesbeta_opt, tiesR_opt, tiesD_opt = tiesgcm.solve()
 
     extended_plot(tiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)] ,degree)
@@ -148,7 +145,7 @@ except AssertionError as err:
 # # print(groups)
 
 # try:
-#     tifiesgcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     tifiesgcm = GCM(y, time, degree, groups=groups, lavaan_like=True)
 #     tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
 
 #     extended_plot(tifiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
@@ -164,7 +161,7 @@ except AssertionError as err:
 # # print(groups)
 
 # try:
-#     drfiesgcm = DiagExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     drfiesgcm = GCM(y, time, degree, R_struct='diagonal', groups=groups, lavaan_like=True)
 #     drfiesbeta_opt, drfiesR_opt, drfiesD_opt = drfiesgcm.solve()
 
 #     extended_plot(drfiesbeta_opt, time, y, groups, [(0,0),(1,0),(0,1)], degree)
