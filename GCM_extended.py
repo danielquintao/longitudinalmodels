@@ -46,8 +46,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         super().__init__(y, groups, timesteps, degree)
 
     def discrepancy(self, theta):
-        """Discrepancy funcion (Preacher chap.1), a.k.a. Full-Information ML (Bollen, Kolenikov)
-           We extended it to groups by checking how it happens in SEM (we based on lavaan)
+        """Discrepancy funcion (Preacher et al. Latent Growth Curve Modeling), a.k.a. Full-Information ML (Bollen, Kolenikov 2008)
 
         Args:
             theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
@@ -89,6 +88,18 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         return df_beta, df_vars_covars
 
     def solve(self, verbose=True, force_solver=False):
+        """estimate model
+
+        Args:
+            verbose (bool, optional): Verbose mode or not. Defaults to True.
+            force_solver (bool, optional): Whether to estimate model if condition on degrees of freedom is not satisfied.
+                                           Defaults to False.
+
+        Returns:
+            (1D array, 2D array, 2D array): beta_opt (fixed effects), R_opt (cov matrix of errors), D_opt (cov matrix of random effects)
+                                            Note: the params of beta_opt are in the following order: fixed effects of class (0,0,..,0),
+                                            then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
+        """
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
@@ -107,9 +118,10 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         R_opt = np.eye(self.T) * (theta_opt[self.p:self.p+self.T] ** 2)
         D_upper = flattened2triangular(theta_opt[self.p+self.T:], self.k)
         D_opt = D_upper.T @ D_upper
-        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
-        print("R", R_opt)
-        print("D", D_opt)
+        if verbose:
+            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("R", R_opt)
+            print("D", D_opt)
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
@@ -121,8 +133,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         super().__init__(y, groups, timesteps, degree)
 
     def discrepancy(self, theta):
-        """Discrepancy funcion (Preacher chap.1), a.k.a. Full-Information ML (Bollen, Kolenikov)
-           We extended it to groups by checking how it happens in SEM (we based on lavaan)
+        """Discrepancy funcion (Preacher et al. Latent Growth Curve Modeling), a.k.a. Full-Information ML (Bollen, Kolenikov 2008)
 
         Args:
             theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
@@ -165,6 +176,18 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         return df_beta, df_vars_covars
 
     def solve(self, verbose=True, force_solver=False):
+        """estimate model
+
+        Args:
+            verbose (bool, optional): Verbose mode or not. Defaults to True.
+            force_solver (bool, optional): Whether to estimate model if condition on degrees of freedom is not satisfied.
+                                           Defaults to False.
+
+        Returns:
+            (1D array, 2D array, 2D array): beta_opt (fixed effects), R_opt (cov matrix of errors), D_opt (cov matrix of random effects)
+                                            Note: the params of beta_opt are in the following order: fixed effects of class (0,0,..,0),
+                                            then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
+        """
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
@@ -184,9 +207,10 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         R_opt = R_sigma * np.eye(self.T)
         D_upper = flattened2triangular(theta_opt[self.p+1:], self.k)
         D_opt = D_upper.T @ D_upper
-        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
-        print("R", R_opt)
-        print("D", D_opt)
+        if verbose:
+            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("R", R_opt)
+            print("D", D_opt)
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
@@ -200,8 +224,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         super().__init__(y, groups, timesteps, degree)
 
     def discrepancy(self, theta):
-        """Discrepancy funcion (Preacher chap.1), a.k.a. Full-Information ML (Bollen, Kolenikov)
-           We extended it to groups by checking how it happens in SEM (we based on lavaan)
+        """Discrepancy funcion (Preacher et al. Latent Growth Curve Modeling), a.k.a. Full-Information ML (Bollen, Kolenikov 2008)
 
         Args:
             theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
@@ -251,6 +274,18 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         return df_beta, df_vars_covars
 
     def solve(self, verbose=True, force_solver=False):
+        """estimate model
+
+        Args:
+            verbose (bool, optional): Verbose mode or not. Defaults to True.
+            force_solver (bool, optional): Whether to estimate model if condition on degrees of freedom is not satisfied.
+                                           Defaults to False.
+
+        Returns:
+            (1D array, 2D array, 2D array): beta_opt (fixed effects), R_opt (cov matrix of errors), D_opt (cov matrix of random effects)
+                                            Note: the params of beta_opt are in the following order: fixed effects of class (0,0,..,0),
+                                            then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
+        """
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
@@ -271,9 +306,10 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         R_opt = np.eye(self.T) * theta_opt[self.p:self.p+self.T]
         D_upper = flattened2triangular(theta_opt[self.p+self.T:], self.k)
         D_opt = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
-        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
-        print("R", R_opt)
-        print("D", D_opt)
+        if verbose:
+            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("R", R_opt)
+            print("D", D_opt)
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
@@ -285,8 +321,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         super().__init__(y, groups, timesteps, degree)
 
     def discrepancy(self, theta):
-        """Discrepancy funcion (Preacher chap.1), a.k.a. Full-Information ML (Bollen, Kolenikov)
-           We extended it to groups by checking how it happens in SEM (we based on lavaan)
+        """Discrepancy funcion (Preacher et al. Latent Growth Curve Modeling), a.k.a. Full-Information ML (Bollen, Kolenikov 2008)
 
         Args:
             theta (ndarray): In the context of GCM, we expect a 1D ndarray of format
@@ -337,6 +372,18 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         return df_beta, df_vars_covars
 
     def solve(self, verbose=True, force_solver=False):
+        """estimate model
+
+        Args:
+            verbose (bool, optional): Verbose mode or not. Defaults to True.
+            force_solver (bool, optional): Whether to estimate model if condition on degrees of freedom is not satisfied.
+                                           Defaults to False.
+
+        Returns:
+            (1D array, 2D array, 2D array): beta_opt (fixed effects), R_opt (cov matrix of errors), D_opt (cov matrix of random effects)
+                                            Note: the params of beta_opt are in the following order: fixed effects of class (0,0,..,0),
+                                            then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
+        """
 
         if not force_solver:
             assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
@@ -358,9 +405,10 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         R_opt = R_sigma * np.eye(self.T)
         D_upper = flattened2triangular(theta_opt[self.p+1:], self.k)
         D_opt = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
-        print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
-        print("R", R_opt)
-        print("D", D_opt)
+        if verbose:
+            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("R", R_opt)
+            print("D", D_opt)
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
