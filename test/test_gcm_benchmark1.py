@@ -1,16 +1,20 @@
-from GCM_extended import TimeIndepErrorExtendedGCMSolver, DiagExtendedGCMSolver
+# add parent folder in order to run tests
+# https://docs.python-guide.org/writing/structure/
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
 from GCM_extended import TimeIndepErrorExtendedGCMLavaanLikeSolver
 import numpy as np
 from gcm_plot import plot, extended_plot
 
-### Benchmark4 has basically the same idea as benchmark1, but with much more data ###
-
-total_data = np.genfromtxt("playground_data/benchmark4_data.csv", delimiter=",", skip_header=0)
+total_data = np.genfromtxt("playground_data/benchmark1_data.csv", delimiter=",", skip_header=0)
 # print(total_data)
 y = total_data[:,0:4] # measures in time steps
-time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark4_ground_truth.txt
+time = np.array([0., 0.5, 1., 1.5]) # cf. benchmark1_ground_truth.txt
 
-degree = 2 # cf. benchmark4_ground_truth.txt
+degree = 2 # cf. benchmark1_ground_truth.txt
 
 # print("==== Extended GCM Solver (known groups) (with Scipy.optimization) ====")
 
@@ -64,17 +68,18 @@ try:
 except AssertionError as err:
     print(err)
 
-# print("=== Extended GCM (known groups) w/ time-indep. errors lavaan-like estimator (Scipy.optimization) ====")
+# print("==== Extended GCM Solver (known groups) w/ time-indep. errors lavaan-like estimator (Scipy.optimization) ====")
 
 # groups = total_data[:,-1:]
+# # print(groups)
 
 # try:
-#     tifigcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
-#     tifibeta_opt, tifiR_opt, tifiD_opt = tifigcm.solve()
+#     tifiesgcm = TimeIndepErrorExtendedGCMLavaanLikeSolver(y, groups, time, degree)
+#     tifiesbeta_opt, tifiesR_opt, tifiesD_opt = tifiesgcm.solve()
 
-#     extended_plot(tifibeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+#     extended_plot(tifiesbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
 
-#     tifisigma = tifiR_opt + tifigcm.Z @ tifiD_opt @ tifigcm.Z.T
-#     print("Sigma:\n{}".format(tifisigma))
+#     tifiessigma = tifiesR_opt + tifiesgcm.Z @ tifiesD_opt @ tifiesgcm.Z.T
+#     print("Sigma:\n{}".format(tifiessigma))
 # except AssertionError as err:
 #     print(err)
