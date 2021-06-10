@@ -1,57 +1,8 @@
-1- study model specificity
-    * " unconstrained estimation results in simpler asymptotic distributions and has greater
-        power in detecting structural misspecification related to negative error variance 
-        estimates" - Testing Negative Error Variances, Bollen, Kolenikov
+- Test GCM against statsmodel using RSME
 
-1.2-  check inversibilité de R+ZDZ' -- OK
+- create a notebook for GCM, another for GCM + A.T.'s, another for LCGA
 
-1.3- tester time-indep error avec des données réelles -- OK (no warning)
+- compare outputs with AT
 
-2- revisit lavaan source code : how does it model the likelihood? Why does it happen to
-   have negative variance? I THINK that lavaan may use directly the sample variance instead
-   of directly using the y_i as I do (they may use the FIML presented in Preacher and in
-   the paper "Testing if Negative [...]" from Bollen and Kolenikov -- CONFIRMED)
-
-3- Next steps:
-    - implement FIML estimator 
-      - no groups -- OK; same results as lavaan (TODO -> add the 'if f < 0 return 0' as in lavaan and re-test)
-      - with groups -- OK
-      - If there exist explicit formulas for jacobian wrt FIML, use it!
-
-4-  implement mult. start vals (either to "search the global max" or to state that the model is not
-    identified if there exist non-global maxima - "Marc Lavielle, Leon Aarons. What do we mean by
-    identifiability in mixed effects models?. 2016.hal-01251986") - MULTISTART IMPLEMENTED
-
-4B- add definite-positivity check for R and D at the end of optimization (i.e. for the final result)
-    -- DONE (only for implementation with discrepancy func; for the MLE one we don't need it because
-    teh representation enforces semi-definite positivity)
-
-5- Add statistics (chi2, z-value, etc)
-
-6- Add a 'identifiability check' using the lemmas in Wei Wang 'Identifiability of Linear Mixed
-   Effects Models' or simply chose the R structure that will always garantee identifiability.
-   Do not forget to remove the initial solver where R could be no matter what pos. def. matrix
-   
-   More specifically:
-   add check that Z is full rank? - DONE (or equivalently, that there are no repeated terms in time_steps)
-   We can also check if the eq. (4) of Wang's "Identifiability of [LME] models" has a non-trivial solution
-   (We might need matrix vectorization and a smart transformation for the transformation from R^(nxn)->R^(nxn) to R^n->R^n)
-   Alternatively, (4) only has trivial solutions when rank(R-R*) > k for all R, R* (Theorem 4.2 of same paper).
-   In the case of R=sigma*Identity, this theorem says that it's always identifiable! (corollary 4.3)
-
-7- Implement method to approximate Fisher Information Matrix
-   "Marc Lavielle, Leon Aarons. What do we mean by identifiability in mixed effects models?")
-
-8- Try to implement the profile likelihood technique
-   (useful to check structural and practical identifiability, cf. Raue et al)
-
-9- If there is time, re-visit the heywood cases using the three techniques above
-   - Information matrix is an heuristics for structural identifiability 
-   - Profile likelihood is an heuristics for structural and practical identifiability 
-   - Likelihood Ratio Test (Chi2-difference) is an heuristics for model misspecification   
-
-10- new datasets, more tests
-
-11- fix header comments and git push
-
+- create 
 /!\ replace asserts by raise ValueError (asserts are removed when python is run in optimized mode -O)
