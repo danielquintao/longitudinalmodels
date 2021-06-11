@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from utils.gcm_plot import extended_plot
+from utils.lcga_plot import plot_lcga_TWO_groups
 
 class LCGA():
     def __init__(self, y, timesteps, degree, N_classes, R_struct="multiple_identity"):
@@ -48,15 +49,18 @@ class LCGA():
         R, betas, pis = self.parse_theta(theta, pis_included=True)
         # compute delta_hat's
         deltas_hat_matrix = np.zeros((self.N, self.N_classes))
+        debug = 0 # XXX XXX XXX XXX XXX
         for i in range(self.N):
             for k in range(self.N_classes):
                 yi = self.y[i].reshape(-1,1)
                 deltas_hat_matrix[i,k] = pis[k] * self.multivar_normal_PDF(yi, R, betas[k])
             # the above expression of sqrt(delta_hat) is incomplete: we must normalize and take the square root
-            if sum(deltas_hat_matrix[i,:]) != 0: # deal with numerical approx -> small vals are stored as 0
-                deltas_hat_matrix[i,:] /= sum(deltas_hat_matrix[i,:])
+            if sum(deltas_hat_matrix[i,:]) > 1E-15: # deal with numerical approx -> small vals are stored as 0
+                deltas_hat_matrix[i,:] /= sum(deltas_hat_matrix[i,:]) # NOTE may cause your deltas to be 1/0s
             else:
                 deltas_hat_matrix[i,:] = 1./self.N_classes # necessary HACK !!!
+                debug += 1
+        print('% OF TIMES WE ENTERED CORNER CASE: {}'.format(debug/self.N))
         # compute sqrt(delta_hat)'s
         sqrt_deltas_hat_matrix = np.sqrt(deltas_hat_matrix)
         # compute mean of sqrt(delta_hat) for each k
@@ -90,8 +94,8 @@ class LCGA():
             -1/2 * sum([
                     self.N * np.trace(inv_R @ Sas[k]) +
                     np.trace(inv_R @ (self.X @ betas[k]) @ dtds[k] @ (self.X @ betas[k]).T) +
-                    self.N * (a_bars[k]-s_bar[k]*(self.X@betas[k])).T @ inv_R @ (a_bars[k]-s_bar[k]*(self.X@betas[k])) +
-                    np.trace(inv_R @ Atds[k] @ (self.X @ betas[k]).T) +
+                    self.N * (a_bars[k]-s_bar[k]*(self.X@betas[k])).T @ inv_R @ (a_bars[k]-s_bar[k]*(self.X@betas[k])) -
+                    np.trace(inv_R @ Atds[k] @ (self.X @ betas[k]).T) -
                     np.trace(inv_R @ (self.X @ betas[k]) @ Atds[k].T)
                     for k in range(self.N_classes)
                 ])
@@ -105,14 +109,14 @@ class LCGA():
             #     ])
         )[0,0] # the expression results in a 1x1 matrix, but we want to return a scalar
 
-    def solve(self):
+    def solve(self, verbose=True):
 
         n_params_R = 1 if self.R_struct == 'multiple_identity' else self.T
 
         # Initialization
         theta0 = np.zeros(n_params_R + self.N_classes*self.k + self.N_classes)
         # initialize R
-        theta0[0:n_params_R] = np.var(self.y[:,0]) # variance of measures in first time step
+        theta0[0:n_params_R] = np.random.rand()*min([np.sqrt(np.var(self.y[:,t])) for t in range(self.T)]) # standard dev of measures in first time step
         # intialize the betas
         samples_idxs = np.random.choice(np.arange(self.N), size=self.N_classes, replace=False)
         for k in range(self.N_classes):
@@ -120,6 +124,7 @@ class LCGA():
             theta0[n_params_R+k*self.k:n_params_R+(k+1)*self.k] = (
                     np.linalg.inv(self.X.T @ self.X) @ self.X.T @ sample_y # initialize with linear regression
                 ).flatten()
+        print('DEBUG', theta0) # XXX XXX XXX XXX XXX XXX
         # initialize the pis
         pis_0 = np.random.rand(self.N_classes)
         pis_0 /= np.sum(pis_0)
@@ -129,19 +134,40 @@ class LCGA():
         counter = 0
 
         while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
+            # DEBUG XXX XXX XXX XXX XXX
+            # R, betas, pis = self.parse_theta(theta0, pis_included=True)
+            # def responsibility(yi):
+            #     return pis[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis[1]*model.multivar_normal_PDF(yi, R, betas[1]))
+            # plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
+
             theta_prev = np.copy(theta0)
             # E-step:
             E = self.E_step(theta0)
+
             # M-step:
             # first, fit the pis
             deltas_hat_matrix = E[0]
             pis_opt = np.sum(deltas_hat_matrix, axis=0) / np.sum(deltas_hat_matrix)
+
+            # DEBUG XXX XXX XXX XXX XXX
+            R, betas, _ = self.parse_theta(theta0, pis_included=True)
+            def responsibility(yi):
+                return pis_opt[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis_opt[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis_opt[1]*model.multivar_normal_PDF(yi, R, betas[1]))
+            plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
+
             # then, the other parameters
             optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
-                jac='3-point', options={'disp':False}) ## FIXME 'disp' = verbose?
+                jac='3-point', options={'disp':False})
             theta0[:-self.N_classes] = optimize_res.x
             theta0[-self.N_classes:] = pis_opt
+            if verbose:
+                print('{}-th EM iteration: {}\n\teval = {}\n\ttheta = {}'.format(counter,
+                'success' if optimize_res.success else 'failed...',
+                optimize_res.fun,
+                theta0))
             counter += 1
+
+        print('theta final (debug)', theta0) # XXX XXX XXX XXX XXX 
 
         return self.parse_theta(theta0, pis_included=True)
 
@@ -174,7 +200,7 @@ if __name__ == '__main__':
 
     ######### TEST OTHER STUFF #########
 
-    total_data = np.genfromtxt("test/playground_data/benchmark5_data.csv", delimiter=",", skip_header=0)
+    total_data = np.genfromtxt("test/playground_data/benchmark6_data.csv", delimiter=",", skip_header=0)
     y = total_data[:,0:4] # measures in time steps
     time = np.array([0., 2., 4., 6.]) # cf. benchmark1_ground_truth.txt
     degree = 1 # cf. benchmark1_ground_truth.txt
@@ -187,5 +213,12 @@ if __name__ == '__main__':
     # print(res)
 
     R, betas, pis = model.solve()
-    eta = np.concatenate((betas[0],betas[1]), axis=1).flatten()
-    extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
+    print('R\n', R)
+    print('betas\n', betas)
+    print('pis', pis)
+    # eta = np.concatenate((betas[0],betas[1]-betas[0]), axis=0).flatten() # HACK to reuse the 'extended_plot' 
+    # print('eta', eta)
+    # extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
+    def responsibility(yi):
+        return pis[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis[1]*model.multivar_normal_PDF(yi, R, betas[1]))
+    plot_lcga_TWO_groups(betas, time, y, degree, responsibility)

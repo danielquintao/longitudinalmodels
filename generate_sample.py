@@ -106,7 +106,7 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
 
 time = np.array([0,2,4,6])
 degree = 1
-data, beta, R, D = generate_sample(250, time, degree, 2, output_file="test/playground_data/benchmark5", scaling=[10,5])
+data, beta, R, D = generate_sample(250, time, degree, 2, output_file="test/playground_data/benchmark6", scaling=[25,5])
 # print(data,'\n',beta,'\n',R,'\n',D)
 extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
 # plot(beta, time, data, degree)
