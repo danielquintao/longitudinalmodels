@@ -5,6 +5,7 @@ from utils.lcga_plot import plot_lcga_TWO_groups
 
 class LCGA():
     def __init__(self, y, timesteps, degree, N_classes, R_struct="multiple_identity"):
+        # TODO asserts
         self.N = len(y)
         self.k = degree+1 # we include the intercept (coefficient of order 0)
         self.N_classes = N_classes
@@ -29,12 +30,16 @@ class LCGA():
                 )
 
     def parse_theta(self, theta, pis_included=True):
-        if self.R_struct == 'multiple_identity':
-            R = np.eye(self.T) * theta[0] ** 2
-            left = 1
-        else:
-            R = np.eye(self.T) * theta[0:self.T] ** 2
-            left = self.T
+        Rs = []
+        left = 0
+        for _ in range(self.N_classes):
+            if self.R_struct == 'multiple_identity':
+                Rs.append(np.eye(self.T) * theta[left] ** 2)
+                left += 1   
+            else:
+                right = left + self.T
+                Rs.append(np.eye(self.T) * theta[left:right] ** 2)
+                left = right
         betas = []
         for _ in range(self.N_classes):
             right = left + self.k
@@ -42,25 +47,24 @@ class LCGA():
             left = right
         if pis_included:
             pis = [theta[left + _] for _ in range(self.N_classes)]
-            return R, betas, pis
-        return R, betas
+            return Rs, betas, pis
+        return Rs, betas
 
     def E_step(self, theta):
-        R, betas, pis = self.parse_theta(theta, pis_included=True)
+        Rs, betas, pis = self.parse_theta(theta, pis_included=True)
         # compute delta_hat's
         deltas_hat_matrix = np.zeros((self.N, self.N_classes))
-        debug = 0 # XXX XXX XXX XXX XXX
         for i in range(self.N):
             for k in range(self.N_classes):
                 yi = self.y[i].reshape(-1,1)
-                deltas_hat_matrix[i,k] = pis[k] * self.multivar_normal_PDF(yi, R, betas[k])
-            # the above expression of sqrt(delta_hat) is incomplete: we must normalize and take the square root
+                deltas_hat_matrix[i,k] = pis[k] * self.multivar_normal_PDF(yi, Rs[k], betas[k])
+            # the above expression of sqrt(delta_hat) is incomplete: we must normalize and take the square root:
             if sum(deltas_hat_matrix[i,:]) > 1E-15: # deal with numerical approx -> small vals are stored as 0
                 deltas_hat_matrix[i,:] /= sum(deltas_hat_matrix[i,:]) # NOTE may cause your deltas to be 1/0s
             else:
                 deltas_hat_matrix[i,:] = 1./self.N_classes # necessary HACK !!!
-                debug += 1
-        print('% OF TIMES WE ENTERED CORNER CASE: {}'.format(debug/self.N))
+        # the total probabilities of a random sunject belonging to each class
+        p = np.sum(deltas_hat_matrix, axis=0)
         # compute sqrt(delta_hat)'s
         sqrt_deltas_hat_matrix = np.sqrt(deltas_hat_matrix)
         # compute mean of sqrt(delta_hat) for each k
@@ -81,26 +85,26 @@ class LCGA():
         # factor (Ak^T @ dk) to be used to compute the cross-cov matrix Sab during M-step
         # (again, we cannot compute Sab directly because it also dpeends on beta)
         Atds = [Ak.T @ dk for Ak, dk in zip(As,ds)]
-        return deltas_hat_matrix, s_bar, a_bars, Sas, dtds, Atds
+        return deltas_hat_matrix, p, s_bar, a_bars, Sas, dtds, Atds
 
     def minus_Q_no_pis(self, theta, *args):
-        R, betas = self.parse_theta(theta, pis_included=False)
-        _, s_bar, a_bars, Sas, dtds, Atds = args
+        Rs, betas = self.parse_theta(theta, pis_included=False)
+        _, p, s_bar, a_bars, Sas, dtds, Atds = args
         # fast way of inverting R (which is either multiple of identity of just diagonal)
-        inv_R = np.eye(self.T) * 1/np.diag(R)
+        inv_Rs = [np.eye(self.T) * 1/np.diag(R) for R in Rs]
         # fast way of computing determinant of R
-        det_R = np.diag(R).prod()
+        det_Rs = [np.diag(R).prod() for R in Rs]
         return - (
             -1/2 * sum([
-                    self.N * np.trace(inv_R @ Sas[k]) +
-                    np.trace(inv_R @ (self.X @ betas[k]) @ dtds[k] @ (self.X @ betas[k]).T) +
-                    self.N * (a_bars[k]-s_bar[k]*(self.X@betas[k])).T @ inv_R @ (a_bars[k]-s_bar[k]*(self.X@betas[k])) -
-                    np.trace(inv_R @ Atds[k] @ (self.X @ betas[k]).T) -
-                    np.trace(inv_R @ (self.X @ betas[k]) @ Atds[k].T)
+                    self.N * np.trace(inv_Rs[k] @ Sas[k]) +
+                    np.trace(inv_Rs[k] @ (self.X @ betas[k]) @ dtds[k] @ (self.X @ betas[k]).T) +
+                    self.N * (a_bars[k]-s_bar[k]*(self.X@betas[k])).T @ inv_Rs[k] @ (a_bars[k]-s_bar[k]*(self.X@betas[k])) -
+                    np.trace(inv_Rs[k] @ Atds[k] @ (self.X @ betas[k]).T) -
+                    np.trace(inv_Rs[k] @ (self.X @ betas[k]) @ Atds[k].T) +
+                    p[k] * np.log(det_Rs[k])
                     for k in range(self.N_classes)
                 ])
             - self.N * self.T / 2 * np.log(2*np.pi)
-            - self.N / 2 * np.log(det_R)
             # + sum([
             #     sum(
             #         [deltas_hat_matrix[i,k] * np.log(pis[k]) for i in range(self.N)]
@@ -114,27 +118,26 @@ class LCGA():
         n_params_R = 1 if self.R_struct == 'multiple_identity' else self.T
 
         # Initialization
-        theta0 = np.zeros(n_params_R + self.N_classes*self.k + self.N_classes)
-        # initialize R
-        theta0[0:n_params_R] = np.random.rand()*min([np.sqrt(np.var(self.y[:,t])) for t in range(self.T)]) # standard dev of measures in first time step
+        theta0 = np.zeros(self.N_classes*(n_params_R + self.k + 1))
+        # initialize the Rs
+        theta0[0:n_params_R*self.N_classes] = np.random.rand()*min([np.sqrt(np.var(self.y[:,t])) for t in range(self.T)]) # standard dev of measures in first time step
         # intialize the betas
         samples_idxs = np.random.choice(np.arange(self.N), size=self.N_classes, replace=False)
         for k in range(self.N_classes):
             sample_y = self.y[samples_idxs[k]].reshape(-1,1)
-            theta0[n_params_R+k*self.k:n_params_R+(k+1)*self.k] = (
+            theta0[n_params_R*self.N_classes+k*self.k:n_params_R*self.N_classes+(k+1)*self.k] = (
                     np.linalg.inv(self.X.T @ self.X) @ self.X.T @ sample_y # initialize with linear regression
                 ).flatten()
-        print('DEBUG', theta0) # XXX XXX XXX XXX XXX XXX
         # initialize the pis
         pis_0 = np.random.rand(self.N_classes)
         pis_0 /= np.sum(pis_0)
         theta0[-self.N_classes:] = pis_0
         # initialize the auxiliary parameter vector for the E-M loop
-        theta_prev = -1 * np.ones(n_params_R + self.N_classes*self.k + self.N_classes)
+        theta_prev = -1 * np.ones(self.N_classes*(n_params_R + self.k + 1))
         counter = 0
 
         while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
-            # DEBUG XXX XXX XXX XXX XXX
+            # DEBUG
             # R, betas, pis = self.parse_theta(theta0, pis_included=True)
             # def responsibility(yi):
             #     return pis[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis[1]*model.multivar_normal_PDF(yi, R, betas[1]))
@@ -146,14 +149,7 @@ class LCGA():
 
             # M-step:
             # first, fit the pis
-            deltas_hat_matrix = E[0]
-            pis_opt = np.sum(deltas_hat_matrix, axis=0) / np.sum(deltas_hat_matrix)
-
-            # DEBUG XXX XXX XXX XXX XXX
-            R, betas, _ = self.parse_theta(theta0, pis_included=True)
-            def responsibility(yi):
-                return pis_opt[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis_opt[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis_opt[1]*model.multivar_normal_PDF(yi, R, betas[1]))
-            plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
+            pis_opt = E[1] / self.N
 
             # then, the other parameters
             optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
@@ -166,8 +162,6 @@ class LCGA():
                 optimize_res.fun,
                 theta0))
             counter += 1
-
-        print('theta final (debug)', theta0) # XXX XXX XXX XXX XXX 
 
         return self.parse_theta(theta0, pis_included=True)
 
@@ -212,13 +206,13 @@ if __name__ == '__main__':
     # res = model.minus_Q(np.random.rand(1 + len(time) + N_classes * (degree+1)), *E)
     # print(res)
 
-    R, betas, pis = model.solve()
-    print('R\n', R)
+    Rs, betas, pis = model.solve()
+    print('R\n', Rs)
     print('betas\n', betas)
     print('pis', pis)
     # eta = np.concatenate((betas[0],betas[1]-betas[0]), axis=0).flatten() # HACK to reuse the 'extended_plot' 
     # print('eta', eta)
     # extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
     def responsibility(yi):
-        return pis[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis[1]*model.multivar_normal_PDF(yi, R, betas[1]))
+        return pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0])+pis[1]*model.multivar_normal_PDF(yi, Rs[1], betas[1]))
     plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
