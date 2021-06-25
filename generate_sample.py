@@ -3,7 +3,7 @@ from utils.matrix_utils import flattened2triangular
 from utils.gcm_plot import extended_plot, plot
 import matplotlib.pyplot as plt
 
-def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
+def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R_struct='multiple_identity'):
     """generate fake longitudinal sample
        Note: We have a fixed scale for generating the covariance matrices (covariances are
              generated from Cholesky decompositins with elements in range [0,1)). Hence, in
@@ -54,8 +54,13 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
     # Repeat until 
     precision = 1E-10
     while not ok:
-        R_upper = flattened2triangular(np.random.rand(int(T*(T+1)/2)))
-        R = R_upper.T @ R_upper
+        if R_struct == 'multiple_identity':
+            R = np.random.rand() * np.eye(T)
+        elif R_struct == 'diagonal':
+            R = np.random.rand(T) * np.eye(T)
+        else:
+            R_upper = flattened2triangular(np.random.rand(int(T*(T+1)/2)))
+            R = R_upper.T @ R_upper
         D_upper = flattened2triangular(np.random.rand(int(k*(k+1)/2)))
         D = D_upper.T @ D_upper
         try:
@@ -63,7 +68,7 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
         except np.linalg.LinAlgError:
             continue
         ok = ((np.eye(T) - inv @ (R+Z@D@Z.T)) < precision * np.ones((T,T))).all()
-        print(inv @ (R+Z@D@Z.T))
+        # print(inv @ (R+Z@D@Z.T))
     # generate random individuals
     data = np.zeros((N,T+(N_groups-1)))
     for i in range(N):
@@ -104,12 +109,13 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None):
         other_file.close()
     return data, beta.flatten(), R, D
 
-time = np.array([0,2,4,6])
-degree = 1
-data, beta, R, D = generate_sample(250, time, degree, 2, output_file="test/playground_data/benchmark6", scaling=[25,5])
-# print(data,'\n',beta,'\n',R,'\n',D)
-extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
-# plot(beta, time, data, degree)
+if __name__=='__main__':
+    time = np.array([0,2,4,6])
+    degree = 1
+    data, beta, R, D = generate_sample(250, time, degree, 2, output_file="test/playground_data/benchmark6", scaling=[25,5])
+    # print(data,'\n',beta,'\n',R,'\n',D)
+    extended_plot(beta, time, data[:,0:4], data[:,-1:], [(0,),(1,)], degree) # P.S. (x,) -> "singleton" tuple        
+    # plot(beta, time, data, degree)
 
         
 
