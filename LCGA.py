@@ -137,30 +137,21 @@ class LCGA():
         counter = 0
 
         while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
-            # DEBUG
-            # R, betas, pis = self.parse_theta(theta0, pis_included=True)
-            # def responsibility(yi):
-            #     return pis[0]*model.multivar_normal_PDF(yi, R, betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, R, betas[0])+pis[1]*model.multivar_normal_PDF(yi, R, betas[1]))
-            # plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
-
             theta_prev = np.copy(theta0)
             # E-step:
             E = self.E_step(theta0)
-
             # M-step:
-            # first, fit the pis
+            # first, fit the pis:
             pis_opt = E[1] / self.N
-
-            # then, the other parameters
+            # then, the other parameters:
             optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
                 jac='3-point', options={'disp':False})
             theta0[:-self.N_classes] = optimize_res.x
             theta0[-self.N_classes:] = pis_opt
             if verbose:
-                print('{}-th EM iteration: {}\n\teval = {}\n\ttheta = {}'.format(counter,
+                print('{}-th EM iteration: {}; eval = {}'.format(counter,
                 'success' if optimize_res.success else 'failed...',
-                optimize_res.fun,
-                theta0))
+                optimize_res.fun))
             counter += 1
 
         return self.parse_theta(theta0, pis_included=True)
