@@ -51,6 +51,22 @@ try:
 except AssertionError as err:
     print(err)
 
+# print("==== Extended GCM Solver (known groups) w/ diag. R lavaan-like estimator (Scipy.optimization) ====")
+
+# groups = total_data[:,-1:]
+# # print(groups)
+
+# try:
+#     esgcm = GCM(y, time, degree, R_struct='diagonal', groups=groups, lavaan_like=True)
+#     esbeta_opt, esR_opt, esD_opt = esgcm.solve(force_solver=True)
+
+#     extended_plot(esbeta_opt, time, y, groups, [(0,),(1,)] ,degree)
+
+#     essigma = esR_opt + esgcm.Z @ esD_opt @ esgcm.Z.T
+#     print("Sigma:\n{}".format(essigma))
+# except AssertionError as err:
+#     print(err)
+
 print("==== Extended GCM Solver (known groups) w/ time-indep. errors (Scipy.optimization) ====")
 
 groups = total_data[:,-1:]
