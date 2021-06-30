@@ -62,7 +62,7 @@ def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
     # plot population-level curves
     for counter, g in enumerate(groups2plot):
         curve = np.zeros(T)
-        coeffs = vector_eta[0:degree+1]
+        coeffs = np.copy(vector_eta[0:degree+1])
         for i, bin_var in enumerate(g,start=1):
             coeffs += bin_var * vector_eta[i*(degree+1) : (i+1)*(degree+1)]
         for i in range(degree+1):

@@ -1,10 +1,9 @@
 import numpy as np
 import scipy.linalg as linalg
-import scipy.optimize as optimize
-from utils.optimization_wrapper import gcm_minimizer, gcm_FIML_minimizer
-from numpy.linalg import det, inv, eigvals, pinv, matrix_rank
+from utils.optimization_wrapper import gcm_FIML_minimizer
+from numpy.linalg import det, inv, eigvals, matrix_rank
 from utils.matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
-from utils.gcm_plot import plot
+from utils.convert_data import convert_label
 
 class ParentExtendedGCMSolver():
     def __init__(self, y, groups, timesteps, degree):
@@ -17,6 +16,12 @@ class ParentExtendedGCMSolver():
             degree (int): degree of the polynomial to fit
         """
         assert len(y) == len(groups)
+        # pass groups from categorial to one-hot if necessary
+        if ((len(groups.shape) == 1 or (len(groups.shape) == 2 and groups.shape[1] == 1))
+            and not all([g in [0,1] for g in groups])):
+            print('Warning: We converted groups to another representation.')
+            print('You should consider explicitly doing the same. See utils.convert_data.convert_labels')
+            groups = convert_label(groups, offset=min(groups))
         self.mu_bar = np.mean(np.concatenate((y,groups),axis=1), axis=0) # sample mean
         self.S = np.cov(np.concatenate((y,groups),axis=1), rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)
         self.x_bar = np.mean(groups, axis=0) # mean of binary vars encoding group membership
