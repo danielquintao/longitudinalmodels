@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
-from utils.gcm_plot import extended_plot
-from utils.lcga_plot import plot_lcga_TWO_groups
+from utils.lcga_plot import plot_lcga_TWO_groups, plot_lcga
 
 class LCGA():
     def __init__(self, y, timesteps, degree, N_classes, R_struct="multiple_identity"):
@@ -227,3 +226,4 @@ if __name__ == '__main__':
     def responsibility(yi):
         return pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0])+pis[1]*model.multivar_normal_PDF(yi, Rs[1], betas[1]))
     plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
+    plot_lcga(betas, time, y, preds, degree)
