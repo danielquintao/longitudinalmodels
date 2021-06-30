@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from LCGA import LCGA
+from models.LCGA import LCGA
 import numpy as np
 from utils.lcga_plot import plot_lcga
 

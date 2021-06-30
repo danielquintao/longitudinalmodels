@@ -1,7 +1,7 @@
-from GCM_basic import DiagGCMSolver, TimeIndepErrorGCMSolver
-from GCM_basic import DiagGCMLavaanLikeSolver, TimeIndepErrorGCMLavaanLikeSolver
-from GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
-from GCM_extended import DiagExtendedGCMLavaanLikeSolver, TimeIndepErrorExtendedGCMLavaanLikeSolver
+from models.GCM_basic import DiagGCMSolver, TimeIndepErrorGCMSolver
+from models.GCM_basic import DiagGCMLavaanLikeSolver, TimeIndepErrorGCMLavaanLikeSolver
+from models.GCM_extended import DiagExtendedGCMSolver, TimeIndepErrorExtendedGCMSolver
+from models.GCM_extended import DiagExtendedGCMLavaanLikeSolver, TimeIndepErrorExtendedGCMLavaanLikeSolver
 
 # factory function
 def GCM(y, timesteps, degree, R_struct='multiple_identity', groups=None, lavaan_like=False):

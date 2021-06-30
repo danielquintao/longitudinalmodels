@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from GCM import GCM
+from models.GCM import GCM
 import numpy as np
 from utils.gcm_plot import plot, extended_plot
 

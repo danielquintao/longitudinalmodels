@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import numpy as np
 from utils.matrix_utils import flattened2triangular
 from utils.gcm_plot import extended_plot, plot
@@ -112,7 +116,7 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R
 if __name__=='__main__':
     time = np.array([0,0.5,1,1.5])
     degree = 1
-    data, beta, R, D = generate_sample(250, time, degree, 3, output_file="test/playground_data/benchmark7", scaling=[1.5,2.5])
+    data, beta, R, D = generate_sample(250, time, degree, 3, output_file="test/playground_data/benchmark8", scaling=[1.5,2.5])
     # print(data,'\n',beta,'\n',R,'\n',D)
     extended_plot(beta, time, data[:,0:4], data[:,-2:], [(0,0),(0,1),(1,0)], degree) # P.S. (x,) -> "singleton" tuple        
     # plot(beta, time, data, degree)
