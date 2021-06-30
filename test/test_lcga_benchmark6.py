@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from LCGA import LCGA
 import numpy as np
-from utils.lcga_plot import plot_lcga_TWO_groups
+from utils.lcga_plot import plot_lcga_TWO_groups, plot_lcga
 
 total_data = np.genfromtxt("test/playground_data/benchmark6_data.csv", delimiter=",", skip_header=1)
 y = total_data[:,0:4] # love scores
@@ -21,12 +21,11 @@ Rs, betas, pis = model.solve()
 print('R\n', Rs)
 print('betas\n', betas)
 print('pis', pis)
-# eta = np.concatenate((betas[0],betas[1]-betas[0]), axis=0).flatten() # HACK to reuse the 'extended_plot' 
-# print('eta', eta)
-# extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
-def responsibility(yi):
-    return pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0])+pis[1]*model.multivar_normal_PDF(yi, Rs[1], betas[1]))
-plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
+
+deltas_hat = model.get_clusterwise_probabilities()
+plot_lcga_TWO_groups(betas, time, y, degree, deltas_hat[:,1])
+preds = model.get_predictions()
+plot_lcga(betas, time, y, degree, preds)
 
 # 0-th EM iteration: success; eval = 2646.6549086928694
 # 1-th EM iteration: success; eval = 2587.3744363565297

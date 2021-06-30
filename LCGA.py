@@ -19,7 +19,6 @@ class LCGA():
         self.deltas_hat_final = None # probs of each subject belonging to each class after fit
         self.predicitons = None # most likely class per subject after fit
 
-
     def multivar_normal_PDF(self, y, R, beta):
         # fast way of inverting R (which is either multiple of identity of just diagonal)
         inv_R = np.eye(self.T) * 1/np.diag(R)
@@ -217,13 +216,9 @@ if __name__ == '__main__':
     print('R\n', Rs)
     print('betas\n', betas)
     print('pis', pis)
-    # eta = np.concatenate((betas[0],betas[1]-betas[0]), axis=0).flatten() # HACK to reuse the 'extended_plot' 
-    # print('eta', eta)
-    # extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
+  
     deltas_hat = model.get_clusterwise_probabilities()
     preds = model.get_predictions()
     print(np.concatenate((deltas_hat, preds.reshape(-1,1)), axis=1))
-    def responsibility(yi):
-        return pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0])+pis[1]*model.multivar_normal_PDF(yi, Rs[1], betas[1]))
-    plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
-    plot_lcga(betas, time, y, preds, degree)
+    plot_lcga_TWO_groups(betas, time, y, degree, deltas_hat[:,1])
+    plot_lcga(betas, time, y, degree, preds)
