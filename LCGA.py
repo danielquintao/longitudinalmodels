@@ -17,6 +17,9 @@ class LCGA():
         for i in range(1,degree+1): # We are using time as parameter -- TODO? custom X per individual
             X = np.concatenate((X, (self.time**i).reshape(-1,1)), axis=1)
         self.X = X
+        self.deltas_hat_final = None # probs of each subject belonging to each class after fit
+        self.predicitons = None # most likely class per subject after fit
+
 
     def multivar_normal_PDF(self, y, R, beta):
         # fast way of inverting R (which is either multiple of identity of just diagonal)
@@ -113,6 +116,14 @@ class LCGA():
             #     ])
         )[0,0] # the expression results in a 1x1 matrix, but we want to return a scalar
 
+    def get_clusterwise_probabilities(self):
+        assert self.deltas_hat_final is not None, "probs of each subject belonging to each class called before fitting"
+        return np.copy(self.deltas_hat_final)
+
+    def get_predictions(self):
+        assert self.predicitons is not None, "predictions of most likely cluster called before fitting"
+        return np.copy(self.predicitons)
+
     def solve(self, verbose=True):
 
         n_params_R = 1 if self.R_struct == 'multiple_identity' else self.T
@@ -153,6 +164,12 @@ class LCGA():
                 'success' if optimize_res.success else 'failed...',
                 optimize_res.fun))
             counter += 1
+
+        # other information to be returned
+        # 1- probability, for each subject, of belonging to each class
+        self.deltas_hat_final = E[0]
+        # 2- most likely class for each subject
+        self.predicitons = np.argmax(self.deltas_hat_final, axis=1).astype('int')
 
         return self.parse_theta(theta0, pis_included=True)
 
@@ -204,6 +221,9 @@ if __name__ == '__main__':
     # eta = np.concatenate((betas[0],betas[1]-betas[0]), axis=0).flatten() # HACK to reuse the 'extended_plot' 
     # print('eta', eta)
     # extended_plot(eta, time, y, np.zeros((len(y),1)), [(0,),(1,)], 1)
+    deltas_hat = model.get_clusterwise_probabilities()
+    preds = model.get_predictions()
+    print(np.concatenate((deltas_hat, preds.reshape(-1,1)), axis=1))
     def responsibility(yi):
         return pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0]) / sum(pis[0]*model.multivar_normal_PDF(yi, Rs[0], betas[0])+pis[1]*model.multivar_normal_PDF(yi, Rs[1], betas[1]))
     plot_lcga_TWO_groups(betas, time, y, degree, responsibility)
