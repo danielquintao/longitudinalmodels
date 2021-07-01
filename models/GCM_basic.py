@@ -82,7 +82,8 @@ class DiagGCMSolver(ParentGCMSolver):
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
-        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        assert success, "WARNING: optimization did not converge"
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -159,7 +160,8 @@ class TimeIndepErrorGCMSolver(ParentGCMSolver):
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
-        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
+        theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
+        assert success, "WARNING: optimization did not converge"
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -246,7 +248,8 @@ class DiagGCMLavaanLikeSolver(ParentGCMSolver):
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
-        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
+        assert success, "WARNING: optimization did not converge"
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
 
@@ -333,7 +336,8 @@ class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMSolver):
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
-        theta_opt = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
+        theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
+        assert success, "WARNING: optimization did not converge"
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
 
