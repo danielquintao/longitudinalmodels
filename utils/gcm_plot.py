@@ -16,12 +16,13 @@ def plot(vector_eta, time, data, degree):
     N,T = data.shape
     assert T == len(time)
     curve = vector_eta[0]
+    interval = np.linspace(time[0],time[-1], 100)
     for i in range(1, degree+1):
-        curve += vector_eta[i] * (time ** i)
+        curve += vector_eta[i] * (interval ** i)
     plt.figure()
     for i in range(N):
         plt.plot(time, data[i], linewidth=1)
-    plt.plot(time, curve, 'k-', linewidth=5)
+    plt.plot(interval, curve, 'k-', linewidth=5)
     plt.show()
 
 def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
@@ -60,14 +61,15 @@ def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
         color = colors[groups2plot.index(tuple(groups[i]))]
         plt.plot(time, data[i], color=color, linestyle='dotted', linewidth=1)
     # plot population-level curves
+    interval = np.linspace(time[0],time[-1], 100)
     for counter, g in enumerate(groups2plot):
-        curve = np.zeros(T)
+        curve = np.zeros(100)
         coeffs = np.copy(vector_eta[0:degree+1])
         for i, bin_var in enumerate(g,start=1):
             coeffs += bin_var * vector_eta[i*(degree+1) : (i+1)*(degree+1)]
         for i in range(degree+1):
-            curve += coeffs[i] * time**i
-        plt.plot(time, curve, color=colors[counter], linewidth=5)
+            curve += coeffs[i] * interval**i
+        plt.plot(interval, curve, color=colors[counter], linewidth=5)
     # legends
     legend = ['group '+str(x) for x in groups2plot]
     handles = [Line2D([0],[0],color=colors[i]) for i in range(len(groups2plot))]

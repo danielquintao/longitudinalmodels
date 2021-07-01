@@ -11,4 +11,8 @@ total_data = np.genfromtxt("test/playground_data/lovedata.csv", delimiter=",", s
 y = total_data[:,0:4] # love scores
 time = np.array([-3,3,9,36])
 
-run_pipeline(y, time, 2)
+groups = total_data[:,-3]
+run_pipeline(y, time, 2, max_latent_classes=3, groups=groups)
+
+groups2 = total_data[:,-2:]
+run_pipeline(y, time, 2, max_latent_classes=3, groups=groups)

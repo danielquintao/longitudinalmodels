@@ -28,11 +28,12 @@ def plot_lcga_TWO_groups(betas, time, data, degree, probs_cluster_1):
         color = plt.cm.winter(256*probs_cluster_1[i])
         plt.plot(time, data[i], color=color, linestyle='dotted', linewidth=1)
     # plot population-level curves
+    interval = np.linspace(time[0],time[-1], 100)
     for _, beta in enumerate(betas):
-        curve = np.zeros(T)
+        curve = np.zeros(100)
         for i in range(degree+1):
-            curve += beta[i] * time**i
-        plt.plot(time, curve, color=plt.cm.winter(256*_), linewidth=5)
+            curve += beta[i] * interval**i
+        plt.plot(interval, curve, color=plt.cm.winter(256*_), linewidth=5)
     # legends
     plt.show()
 
@@ -66,12 +67,13 @@ def plot_lcga(betas, time, data, degree, clusters_pred):
         color = colors[clusters_pred[i]]
         plt.plot(time, data[i], color=color, linestyle='dotted', linewidth=1)
     # plot population-level curves
+    interval = np.linspace(time[0],time[-1], 100)
     for counter in range(n_clusters):
-        curve = np.zeros(T)
+        curve = np.zeros(100)
         coeffs = np.copy(betas[counter])
         for i in range(degree+1):
-            curve += coeffs[i] * time**i
-        plt.plot(time, curve, color=colors[counter], linewidth=5)
+            curve += coeffs[i] * interval**i
+        plt.plot(interval, curve, color=colors[counter], linewidth=5)
     # legends
     legend = ['group '+str(x) for x in range(n_clusters)]
     handles = [Line2D([0],[0],color=colors[i]) for i in range(n_clusters)]
