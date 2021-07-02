@@ -97,25 +97,22 @@ def run_pipeline(y, timesteps, max_degree, R_struct='multiple_identity', max_lat
                 continue
             print('Fixed effects:')
             beta = betas_opt[0:degree+1].reshape(-1,1)
-            betas = [np.copy(beta)]
             print(beta)
             for i in range(1,groups_converted.shape[1]+1):
                 beta_i = betas_opt[0:degree+1] + betas_opt[i*(degree+1):(i+1)*(degree+1)]
-                betas.append(np.copy(beta_i))
                 print(beta_i.reshape(-1,1))
             print('Random effects covariance matrix:')
             print(D_opt)
             print('Residual deviations covariance matrix:')
             print(R_opt)
             if plot_with_categorical:
-                plot_lcga(betas, timesteps, y, degree, groups-min(groups))
+                plot_lcga(gcm.pretty_beta(betas_opt), timesteps, y, degree, groups-min(groups))
             else:
                 groups2plot = list(set([tuple(r.astype(int)) for r in groups_converted[:]]))
                 extended_plot(betas_opt, timesteps, y, groups_converted, groups2plot, degree)
             print()
         # delete variables to avoid bugs by accidentaly calling them in the code that follow
         del betas_opt
-        del betas
         del D_opt
         del R_opt
         del gcm

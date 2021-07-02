@@ -44,6 +44,12 @@ class ParentExtendedGCMSolver():
             Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
         self.Z = Z
 
+    def pretty_beta(self, betas_opt):
+        betas = [betas_opt[0:self.k].reshape(-1,1)]
+        for i in range(1,self.N_groups+1): # recall that N_groups is actually the nb of group vars
+            betas.append(betas[0]+betas_opt[i*self.k:(i+1)*self.k].reshape(-1,1))
+        return betas
+
 #----------------------------------------------------------------------------------------------#
 
 class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
@@ -92,7 +98,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
         Args:
@@ -132,6 +138,8 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        if betas_pretty:
+            return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
 
 class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
@@ -181,7 +189,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
         Args:
@@ -222,6 +230,8 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        if betas_pretty:
+            return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
 
 #----------------------------------------------------------------------------------------------#
@@ -280,7 +290,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
         Args:
@@ -322,6 +332,8 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        if betas_pretty:
+            return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
 
 class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
@@ -379,7 +391,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
-    def solve(self, verbose=True, force_solver=False):
+    def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
         Args:
@@ -422,4 +434,6 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        if betas_pretty:
+            return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
