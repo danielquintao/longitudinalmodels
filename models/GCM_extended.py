@@ -11,7 +11,7 @@ class ParentExtendedGCMSolver():
 
         Args:
             y (ndarray): observations : each row an individual, each column a time step
-            groups (binary ndarray): membership of individuals in each group (0 or 1)
+            groups (binary ndarray): membership of individuals in each group (categorical or custom one-hot)
             timesteps (array): time steps, e.g. np.array([0,1,2,3])
             degree (int): degree of the polynomial to fit
         """
