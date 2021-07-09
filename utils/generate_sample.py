@@ -7,7 +7,7 @@ from utils.matrix_utils import flattened2triangular
 from utils.gcm_plot import extended_plot, plot
 import matplotlib.pyplot as plt
 
-def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R_struct='multiple_identity'):
+def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R_struct='multiple_identity', center_beta_distr=False):
     """generate fake longitudinal sample
        Note: We have a fixed scale for generating the covariance matrices (covariances are
              generated from Cholesky decompositins with elements in range [0,1)). Hence, in
@@ -33,6 +33,8 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R
                                                            interval [0,1) with numpy.rand().
                                                            Defaults to None (scale '1' for every
                                                            coefficient order).
+        center_beta_mean (bool, optional): whether to generate coefffs of beta in [0,1) or [-0.5,0.5).
+                                           Defaults to false. 
 
     Returns:
         [type]: [description]
@@ -43,8 +45,9 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R
         scaling = np.ones(degree+1)
     # generate beta
     beta = []
+    beta_translation = scaling*(0.5*np.ones(degree+1)) if center_beta_distr else 0
     for i in range(N_groups):
-        beta.extend(list(scaling * np.random.rand(degree+1)))
+        beta.extend(list(scaling * np.random.rand(degree+1) - beta_translation))
     beta = np.array(beta).reshape(-1,1)
     # generate covarianve matrixes (using a "cholesky trick" to ensure properties)
     T = len(time)
@@ -115,8 +118,10 @@ def generate_sample(N, time, degree, N_groups, output_file=None, scaling=None, R
 
 if __name__=='__main__':
     time = np.array([0,0.5,1,1.5])
-    degree = 1
-    data, beta, R, D = generate_sample(250, time, degree, 3, output_file="test/playground_data/benchmark8", scaling=[1.5,2.5])
+    degree = 2
+    scale = [15,5,5]
+    data, beta, R, D = generate_sample(250, time, degree, 3, output_file="test/playground_data/benchmark9",
+        scaling=scale, center_beta_distr=True)
     # print(data,'\n',beta,'\n',R,'\n',D)
     extended_plot(beta, time, data[:,0:4], data[:,-2:], [(0,0),(0,1),(1,0)], degree) # P.S. (x,) -> "singleton" tuple        
     # plot(beta, time, data, degree)
