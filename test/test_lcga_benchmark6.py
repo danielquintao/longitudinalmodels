@@ -16,6 +16,11 @@ N_classes = 2
 model = LCGA(y, time, degree, N_classes)
 Rs, betas, pis = model.solve()
 
+# # test
+# Rs2, betas2, pis2 = model.solve(step_M_per_class=False)
+# print([R - R2 for R,R2 in zip(Rs,Rs2)])
+# print([beta - beta2 for beta,beta2 in zip(betas,betas2)])
+# print([beta - beta2 for beta,beta2 in zip(betas,betas2)])
 
 
 print('R\n', Rs)

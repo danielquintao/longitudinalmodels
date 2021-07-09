@@ -31,6 +31,18 @@ class LCGA():
                 )
 
     def parse_theta(self, theta, pis_included=True):
+        """parse parameter vector (for all classes)
+
+        Args:
+            theta (1D array): parameter vector in the order: Rs (covs), betas (regression coeffs),
+                              and then the classes probabilities pis (if that's the case, optional)
+            pis_included (bool, optional): Whether to return the pis or not. There is no problem if
+                                           the argument contains the pis and pis_included is False.
+                                           Defaults to True.
+
+        Returns:
+            (list, list, (list)): Rs, betas, (pis)
+        """
         Rs = []
         left = 0
         for _ in range(self.N_classes):
@@ -50,6 +62,35 @@ class LCGA():
             pis = [theta[left + _] for _ in range(self.N_classes)]
             return Rs, betas, pis
         return Rs, betas
+
+    def parse_theta_one_class(self, theta, pi_included=True):
+        """parse parameter vector for one class
+
+        Args:
+            theta (1D array): parameter vector in the order: R (cov), beta (regression coeffs),
+                              and then the class probability pi (if that's the case, optional)
+            pi_included (bool, optional): Whether to returnpi or not. There is no problem if
+                                          the argument contains the pi and pi_included is False.
+                                          Defaults to True.
+
+        Returns:
+            (list, list, (list)): R, beta, (pi)
+        """
+        left = 0
+        if self.R_struct == 'multiple_identity':
+            R = np.eye(self.T) * theta[left] ** 2
+            left += 1   
+        else:
+            right = left + self.T
+            R = np.eye(self.T) * theta[left:right] ** 2
+            left = right
+        right = left + self.k
+        beta = theta[left:right].reshape(-1,1)
+        left = right
+        if pi_included:
+            pi = theta[left]
+            return R, beta, pi
+        return R, beta
 
     def E_step(self, theta):
         Rs, betas, pis = self.parse_theta(theta, pis_included=True)
@@ -89,6 +130,18 @@ class LCGA():
         return deltas_hat_matrix, p, s_bar, a_bars, Sas, dtds, Atds
 
     def minus_Q_no_pis(self, theta, *args):
+        """objective function to minimize in the case step_M_per_class=False (i.e. we fit the params
+           of all classes at the same time during M-step of the EM algo). This is the M-step log-likelihood.
+           The "no_pis" in the name means that the classes probabilities are explicitly estimated, so they won't
+           impact the minimization of this objective function
+
+        Args:
+            theta (1D array): parameter vector as received by self.parse_theta
+                              (but without the pis, otherwise there is no minimum...)
+
+        Returns:
+            scalar: log-likelihood for M-step (not considering the classes probabilities pis)
+        """
         Rs, betas = self.parse_theta(theta, pis_included=False)
         _, p, s_bar, a_bars, Sas, dtds, Atds = args
         # fast way of inverting R (which is either multiple of identity of just diagonal)
@@ -114,6 +167,35 @@ class LCGA():
             #     ])
         )[0,0] # the expression results in a 1x1 matrix, but we want to return a scalar
 
+    def class_M_step_obj(self, theta, *args):
+        """objective function to minimize in the case step_M_per_class=True (i.e. we fit the params
+           of one class at a time time during M-step of the EM algo).
+
+        Args:
+            theta (1D array): parameter vector as received by self.parse_theta_one_class
+                              (but without the pi, otherwise there is no minimum...)
+
+        Returns:
+            scalar: log-likelihood for M-step (not considering the class probability pi)
+        """
+        R, beta = self.parse_theta_one_class(theta, pi_included=False)
+        pk, s_bark, a_bar, Sa, dtd, Atd = args # NOTE 1 less element than *args in self.minus_Q_no_pis
+        # fast way of inverting R (which is either multiple of identity of just diagonal)
+        inv_R = np.eye(self.T) * 1/np.diag(R)
+        # fast way of computing determinant of R
+        det_R = np.diag(R).prod()
+        return - (
+            -1/2 * (
+                    self.N * np.trace(inv_R @ Sa) +
+                    np.trace(inv_R @ (self.X @ beta) @ dtd @ (self.X @ beta).T) +
+                    self.N * (a_bar-s_bark*(self.X@beta)).T @ inv_R @ (a_bar-s_bark*(self.X@beta)) -
+                    np.trace(inv_R @ Atd @ (self.X @ beta).T) -
+                    np.trace(inv_R @ (self.X @ beta) @ Atd.T) +
+                    pk * np.log(det_R)
+                )
+            - self.N * self.T * np.log(2*np.pi) / (2 * self.N_classes)
+        )[0,0] # the expression results in a 1x1 matrix, but we want to return a scalar
+
     def get_clusterwise_probabilities(self):
         assert self.deltas_hat_final is not None, "probs of each subject belonging to each class called before fitting"
         return np.copy(self.deltas_hat_final)
@@ -122,7 +204,19 @@ class LCGA():
         assert self.predicitons is not None, "predictions of most likely cluster called before fitting"
         return np.copy(self.predicitons)
 
-    def solve(self, verbose=True):
+    def solve(self, verbose=True, step_M_per_class=True):
+        """fit the LCGA classes
+
+        Args:
+            verbose (bool, optional): Verbose mode. Defaults to True.
+            step_M_per_class (bool, optional): Whether to fit each class at a time in M-step.
+                                               (Faster if True, and theoretically the same results,
+                                               but option False kept just in case)
+                                               Defaults to True.
+
+        Returns:
+            (list, list, list): Rs, betas, pis
+        """
 
         n_params_R = 1 if self.R_struct == 'multiple_identity' else self.T
 
@@ -152,18 +246,33 @@ class LCGA():
             # M-step:
             # first, fit the pis:
             pis_opt = E[1] / self.N
-            # then, the other parameters:
-            optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
-                jac='3-point', options={'disp':False})
-            theta0[:-self.N_classes] = optimize_res.x
             theta0[-self.N_classes:] = pis_opt
-            if verbose:
-                print('{}-th EM iteration: {}; eval = {}'.format(counter,
-                'success' if optimize_res.success else 'failed...',
-                optimize_res.fun))
+            # then, the other parameters:
+            if step_M_per_class:
+                _, p, s_bar, a_bars, Sas, dtds, Atds = E
+                off_R = self.N_classes*n_params_R # offset, theta is in the order: Rs, and then betas
+                for k in range(self.N_classes):
+                    vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
+                    input = np.concatenate(
+                        (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
+                    )
+                    optimize_res = minimize(self.class_M_step_obj, input, args=vals, jac='3-point', options={'disp':False})
+                    theta0[k*n_params_R:(k+1)*n_params_R] = optimize_res.x[0:n_params_R]
+                    theta0[off_R+k*self.k:off_R+(k+1)*self.k] = optimize_res.x[n_params_R:]
+                    if verbose:
+                        print('{}-th EM iteration, class {}: {}'.format(counter, k,
+                        'success' if optimize_res.success else 'failed...'))
+            else:
+                optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
+                    jac='3-point', options={'disp':False})
+                theta0[:-self.N_classes] = optimize_res.x
+                if verbose:
+                    print('{}-th EM iteration: {}; eval = {}'.format(counter,
+                    'success' if optimize_res.success else 'failed...',
+                    optimize_res.fun))
             counter += 1
 
-        # other information to be returned
+        # other information (to be returned by auxiliary methods)
         # 1- probability, for each subject, of belonging to each class
         self.deltas_hat_final = E[0]
         # 2- most likely class for each subject

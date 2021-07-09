@@ -1,8 +1,1 @@
-- Test GCM against statsmodel using RSME
-
-- create a notebook for GCM, another for GCM + A.T.'s, another for LCGA
-
-- compare outputs with AT
-
-- create 
 /!\ replace asserts by raise ValueError (asserts are removed when python is run in optimized mode -O)
