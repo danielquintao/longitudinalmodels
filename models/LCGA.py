@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from utils.lcga_plot import plot_lcga_TWO_groups, plot_lcga
+import random
 
 class LCGA():
     def __init__(self, y, timesteps, degree, N_classes, R_struct="multiple_identity"):
@@ -204,10 +205,11 @@ class LCGA():
         assert self.predicitons is not None, "predictions of most likely cluster called before fitting"
         return np.copy(self.predicitons)
 
-    def solve(self, verbose=True, step_M_per_class=True):
+    def solve(self, nrep=10, verbose=True, step_M_per_class=True):
         """fit the LCGA classes
 
         Args:
+            nrep (int) : number of multistart repetitions. Defaults to 10.
             verbose (bool, optional): Verbose mode. Defaults to True.
             step_M_per_class (bool, optional): Whether to fit each class at a time in M-step.
                                                (Faster if True, and theoretically the same results,
@@ -220,62 +222,89 @@ class LCGA():
 
         n_params_R = 1 if self.R_struct == 'multiple_identity' else self.T
 
-        # Initialization
-        theta0 = np.zeros(self.N_classes*(n_params_R + self.k + 1))
-        # initialize the Rs
-        theta0[0:n_params_R*self.N_classes] = np.random.rand()*min([np.sqrt(np.var(self.y[:,t])) for t in range(self.T)]) # standard dev of measures in first time step
-        # intialize the betas
-        samples_idxs = np.random.choice(np.arange(self.N), size=self.N_classes, replace=False)
-        for k in range(self.N_classes):
-            sample_y = self.y[samples_idxs[k]].reshape(-1,1)
-            theta0[n_params_R*self.N_classes+k*self.k:n_params_R*self.N_classes+(k+1)*self.k] = (
-                    np.linalg.inv(self.X.T @ self.X) @ self.X.T @ sample_y # initialize with linear regression
-                ).flatten()
-        # initialize the pis
-        pis_0 = np.random.rand(self.N_classes)
-        pis_0 /= np.sum(pis_0)
-        theta0[-self.N_classes:] = pis_0
-        # initialize the auxiliary parameter vector for the E-M loop
-        theta_prev = -1 * np.ones(self.N_classes*(n_params_R + self.k + 1))
-        counter = 0
+        theta_opt = None # optimal parameter vector (lowest loglik)
+        E_opt = None # values of the E-step for the optimal repetition
+        opt_val = np.Inf # optimal loglik
+        opt_val_list = [] # the final loglik for each repetition
 
-        while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
-            theta_prev = np.copy(theta0)
-            # E-step:
-            E = self.E_step(theta0)
-            # M-step:
-            # first, fit the pis:
-            pis_opt = E[1] / self.N
-            theta0[-self.N_classes:] = pis_opt
-            # then, the other parameters:
+        ########### MULTISTART ############
+        for _ in range(nrep):
+            #### Initialization ####
+            theta0 = np.zeros(self.N_classes*(n_params_R + self.k + 1))
+            # initialize the Rs
+            theta0[0:n_params_R*self.N_classes] = np.random.rand()*min([np.sqrt(np.var(self.y[:,t])) for t in range(self.T)]) # standard dev of measures in first time step
+            # intialize the betas
+            samples_idxs = np.random.choice(np.arange(self.N), size=self.N_classes, replace=False)
+            for k in range(self.N_classes):
+                sample_y = self.y[samples_idxs[k]].reshape(-1,1)
+                theta0[n_params_R*self.N_classes+k*self.k:n_params_R*self.N_classes+(k+1)*self.k] = (
+                        np.linalg.inv(self.X.T @ self.X) @ self.X.T @ sample_y # initialize with linear regression
+                    ).flatten()
+            # initialize the pis
+            pis_0 = np.random.rand(self.N_classes)
+            pis_0 /= np.sum(pis_0)
+            theta0[-self.N_classes:] = pis_0
+            # initialize the auxiliary parameter vector for the E-M loop
+            theta_prev = -1 * np.ones(self.N_classes*(n_params_R + self.k + 1))
+            counter = 0
+            #### EM Algorithm ####
+            while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
+                theta_prev = np.copy(theta0)
+                # E-step:
+                E = self.E_step(theta0)
+                # M-step:
+                # first, fit the pis:
+                pis_opt = E[1] / self.N
+                theta0[-self.N_classes:] = pis_opt
+                # then, the other parameters:
+                if step_M_per_class:
+                    _, p, s_bar, a_bars, Sas, dtds, Atds = E
+                    off_R = self.N_classes*n_params_R # offset, theta is in the order: Rs, and then betas
+                    for k in range(self.N_classes):
+                        vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
+                        input = np.concatenate(
+                            (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
+                        )
+                        optimize_res = minimize(self.class_M_step_obj, input, args=vals, jac='3-point', options={'disp':False})
+                        theta0[k*n_params_R:(k+1)*n_params_R] = optimize_res.x[0:n_params_R]
+                        theta0[off_R+k*self.k:off_R+(k+1)*self.k] = optimize_res.x[n_params_R:]
+                        if verbose:
+                            print('{}-th EM iteration, class {}: {}'.format(counter, k,
+                            'success' if optimize_res.success else 'failed...'))
+                else:
+                    optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
+                        jac='3-point', options={'disp':False})
+                    theta0[:-self.N_classes] = optimize_res.x
+                    if verbose:
+                        print('{}-th EM iteration: {}; eval = {}'.format(counter,
+                        'success' if optimize_res.success else 'failed...',
+                        optimize_res.fun))
+                counter += 1
+            if verbose:
+                print() # break line
+            fun = - sum(np.log(pis_opt) * E[1]) # (-1) * sum_k [ log(pi) * sum_i[delta_hat] ]
             if step_M_per_class:
-                _, p, s_bar, a_bars, Sas, dtds, Atds = E
-                off_R = self.N_classes*n_params_R # offset, theta is in the order: Rs, and then betas
                 for k in range(self.N_classes):
                     vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
-                    input = np.concatenate(
+                    theta0_class = np.concatenate(
                         (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
                     )
-                    optimize_res = minimize(self.class_M_step_obj, input, args=vals, jac='3-point', options={'disp':False})
-                    theta0[k*n_params_R:(k+1)*n_params_R] = optimize_res.x[0:n_params_R]
-                    theta0[off_R+k*self.k:off_R+(k+1)*self.k] = optimize_res.x[n_params_R:]
-                    if verbose:
-                        print('{}-th EM iteration, class {}: {}'.format(counter, k,
-                        'success' if optimize_res.success else 'failed...'))
+                    fun += self.class_M_step_obj(theta0_class, *vals)
             else:
-                optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
-                    jac='3-point', options={'disp':False})
-                theta0[:-self.N_classes] = optimize_res.x
-                if verbose:
-                    print('{}-th EM iteration: {}; eval = {}'.format(counter,
-                    'success' if optimize_res.success else 'failed...',
-                    optimize_res.fun))
-            counter += 1
+                fun += self.minus_Q_no_pis(theta0[0:-self.N_classes], *E)
+            opt_val_list.append(fun)
+            if fun < opt_val:
+                opt_val = fun
+                theta_opt = theta0
+                E_opt = E
+
+        if verbose:
+            print("Optimal value per repetiton with random initialization: {}".format(opt_val_list))
 
         # other information (to be returned by auxiliary methods)
         # 1- probability, for each subject, of belonging to each class
-        self.deltas_hat_final = E[0]
+        self.deltas_hat_final = E_opt[0]
         # 2- most likely class for each subject
         self.predicitons = np.argmax(self.deltas_hat_final, axis=1).astype('int')
 
-        return self.parse_theta(theta0, pis_included=True)
+        return self.parse_theta(theta_opt, pis_included=True)
