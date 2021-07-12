@@ -54,6 +54,8 @@ def plot_lcga(betas, time, data, degree, clusters_pred):
     assert clusters_pred.shape in [(N,),(N,1)]
     if clusters_pred.shape == (N,1):
         clusters_pred = clusters_pred.flatten() 
+    if np.issubdtype(clusters_pred.dtype, np.floating):
+        clusters_pred = clusters_pred.astype(int)
     n_clusters = max(clusters_pred)+1
     assert len(betas) == n_clusters
     colors = {0:'tab:blue', 1:'tab:orange', 2:'tab:green', 3:'tab:red', 4:'tab:purple',

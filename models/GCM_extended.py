@@ -131,7 +131,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         D_upper = flattened2triangular(theta_opt[self.p+self.T:], self.k)
         D_opt = D_upper.T @ D_upper
         if verbose:
-            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("intercept, slope and whatever higher degree params: {}".format(self.pretty_beta(beta_opt) if betas_pretty else beta_opt))
             print("R", R_opt)
             print("D", D_opt)
 
@@ -223,7 +223,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         D_upper = flattened2triangular(theta_opt[self.p+1:], self.k)
         D_opt = D_upper.T @ D_upper
         if verbose:
-            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("intercept, slope and whatever higher degree params: {}".format(self.pretty_beta(beta_opt) if betas_pretty else beta_opt))
             print("R", R_opt)
             print("D", D_opt)
 
@@ -325,7 +325,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         D_upper = flattened2triangular(theta_opt[self.p+self.T:], self.k)
         D_opt = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
         if verbose:
-            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("intercept, slope and whatever higher degree params: {}".format(self.pretty_beta(beta_opt) if betas_pretty else beta_opt))
             print("R", R_opt)
             print("D", D_opt)
 
@@ -427,7 +427,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         D_upper = flattened2triangular(theta_opt[self.p+1:], self.k)
         D_opt = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
         if verbose:
-            print("intercept, slope and whatever higher degree params: {}".format(beta_opt))
+            print("intercept, slope and whatever higher degree params: {}".format(self.pretty_beta(beta_opt) if betas_pretty else beta_opt))
             print("R", R_opt)
             print("D", D_opt)
 
