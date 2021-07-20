@@ -317,16 +317,8 @@ class LCGA():
                         'success' if optimize_res.success else 'failed...',
                         optimize_res.fun))
                 counter += 1
-            fun = - sum(np.log(pis_opt) * E[1]) # (-1) * sum_k [ log(pi) * sum_i[delta_hat] ]
-            if step_M_per_class:
-                for k in range(self.N_classes):
-                    vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
-                    theta0_class = np.concatenate(
-                        (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
-                    )
-                    fun += self.class_M_step_obj(theta0_class, *vals)
-            else:
-                fun += self.minus_Q_no_pis(theta0[0:-self.N_classes], *E)
+            fun = (- sum(np.log(pis_opt) * E[1]) # (-1) * sum_k [ log(pi) * sum_i[delta_hat] ]
+                   + self.minus_Q_no_pis(theta0[0:-self.N_classes], *E))
             opt_val_list.append(fun)
             if fun < opt_val:
                 opt_val = fun
