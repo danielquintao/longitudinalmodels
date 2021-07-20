@@ -8,7 +8,7 @@ from models.LCGA import LCGA
 import numpy as np
 from utils.lcga_plot import plot_lcga
 
-total_data = np.genfromtxt("test/playground_data/benchmark7_data.csv", delimiter=",", skip_header=1)
+total_data = np.genfromtxt("test/playground_data/benchmark7_data.csv", delimiter=",", skip_header=0)
 y = total_data[:,0:4] # love scores
 time = np.array([0., 0.5, 1., 1.5])
 degree = 1

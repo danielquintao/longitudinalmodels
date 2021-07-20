@@ -8,7 +8,7 @@ from test.benchmark_lcga.build_dataframe import build_dataframe
 from models.LCGA import LCGA
 import numpy as np
 
-total_data = np.genfromtxt("test/playground_data/benchmark5_data.csv", delimiter=",", skip_header=1)
+total_data = np.genfromtxt("test/playground_data/benchmark5_data.csv", delimiter=",", skip_header=0)
 y = total_data[:,0:4] # love scores
 time = np.array([0., 2., 4., 6.])
 degree = 1
@@ -21,9 +21,11 @@ build_dataframe(y, 'test/benchmark_lcga/benchmark5', time, degree)
 model = LCGA(y, time, degree, N_classes)
 Rs, betas, pis = model.solve()
 
+np.set_printoptions(precision=5)
 print('R\n', Rs)
 print('betas\n', betas)
 print('pis', pis)
+print("sigmas:", [np.sqrt(R[0,0]) for R in Rs])
 
 deltas_hat = model.get_clusterwise_probabilities()
 preds = model.get_predictions()

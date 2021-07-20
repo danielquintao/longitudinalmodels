@@ -87,7 +87,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         log_det_sigma_hat = np.log(det(Sigma_hat))
         f = (log_det_sigma_hat - np.log(det(self.S)) + 
         np.trace(self.S @ inv_sigma_hat) + 
-        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - 
+        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :) 
         self.T - self.N_groups)
         return f
 
@@ -178,7 +178,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         log_det_sigma_hat = np.log(det(Sigma_hat))
         f = (log_det_sigma_hat - np.log(det(self.S)) + 
         np.trace(self.S @ inv_sigma_hat) + 
-        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - 
+        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :)
         self.T - self.N_groups)
         return f
 
@@ -277,7 +277,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             log_det_sigma_hat = np.log(det(Sigma_hat))
         f = (log_det_sigma_hat - np.log(det(self.S)) + 
         np.trace(self.S @ inv_sigma_hat) + 
-        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - 
+        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :) 
         self.T - self.N_groups)
         if f < 0:
             return 0 # the discrepancy func should be always non-negative; lavaan does this as well
@@ -378,7 +378,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             log_det_sigma_hat = np.log(det(Sigma_hat))
         f = (log_det_sigma_hat - np.log(det(self.S)) + 
         np.trace(self.S @ inv_sigma_hat) + 
-        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - 
+        (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :) 
         self.T - self.N_groups)
         if f < 0:
             return 0 # the discrepancy func should be always non-negative; lavaan does this as well

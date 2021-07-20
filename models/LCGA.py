@@ -248,7 +248,7 @@ class LCGA():
             theta_prev = -1 * np.ones(self.N_classes*(n_params_R + self.k + 1))
             counter = 0
             #### EM Algorithm ####
-            while np.linalg.norm(theta_prev - theta0) > 1E-8 and counter < 500:
+            while np.linalg.norm(theta_prev - theta0) > 1E-10 and counter < 500:
                 theta_prev = np.copy(theta0)
                 # E-step:
                 E = self.E_step(theta0)

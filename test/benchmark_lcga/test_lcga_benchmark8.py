@@ -7,8 +7,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 from test.benchmark_lcga.build_dataframe import build_dataframe
 from models.LCGA import LCGA
 import numpy as np
+from utils.lcga_plot import plot_lcga
 
-total_data = np.genfromtxt("test/playground_data/benchmark8_data.csv", delimiter=",", skip_header=1)
+total_data = np.genfromtxt("test/playground_data/benchmark8_data.csv", delimiter=",", skip_header=0)
 y = total_data[:,0:4] # love scores
 time = np.array([0., 0.5, 1., 1.5])
 degree = 1
@@ -21,12 +22,16 @@ build_dataframe(y, 'test/benchmark_lcga/benchmark8', time, degree)
 model = LCGA(y, time, degree, N_classes)
 Rs, betas, pis = model.solve()
 
+np.set_printoptions(precision=5)
 print('R\n', Rs)
 print('betas\n', betas)
 print('pis', pis)
+print("sigmas:", [np.sqrt(R[0,0]) for R in Rs])
 
 deltas_hat = model.get_clusterwise_probabilities()
 preds = model.get_predictions()
 
 # print('posterior (deltas_hat)\n', deltas_hat)
 # print('clusters (preds)\n', preds)
+
+plot_lcga(betas, time, y, degree, preds)
