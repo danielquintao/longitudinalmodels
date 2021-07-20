@@ -13,10 +13,12 @@ class LCGA():
         self.time = timesteps
         self.R_struct = R_struct
         self.y = y
+        self.y_stack = y.reshape(-1,1) # for M-step closed formula (WLS)
         X = np.ones((self.T,1))
         for i in range(1,degree+1): # We are using time as parameter -- TODO? custom X per individual
             X = np.concatenate((X, (self.time**i).reshape(-1,1)), axis=1)
         self.X = X
+        self.X_stack = np.tile(X, [self.N, 1]) # for M-step closed formula (WLS)
         self.deltas_hat_final = None # probs of each subject belonging to each class after fit
         self.predicitons = None # most likely class per subject after fit
 
@@ -197,6 +199,30 @@ class LCGA():
             - self.N * self.T * np.log(2*np.pi) / (2 * self.N_classes)
         )[0,0] # the expression results in a 1x1 matrix, but we want to return a scalar
 
+    def WLS_estimates(self, deltas_hat_k, p=None):
+        """compute the maximum-likelihood estimates for beta_k and sigma_k, for cluster k
+           (which are equal to the Weighted Least Squares - WLS) This method should only be
+           used under the homoscedastic assumption (R = sigma^2*Identity)
+
+        Args:
+            deltas_hat_k (1D array): posterior probability of each individual belonging to cluster k
+            p (double, optional): sum of elements of deltas_hat_k, if avlready computed. Defaults
+                                  to None.
+
+        Returns:
+            1D array: optimal sigma_k, and optimal beta coefficients
+        """
+        assert deltas_hat_k.shape == (self.N,), 'deltas_hat_k should be 1D array with Deltas_ik'
+        # build weight matrix
+        W = np.repeat(deltas_hat_k, self.T) # diagonal matrix with subseqs of T delta_ik's
+        beta = np.linalg.inv((self.X_stack.T * W) @ self.X_stack) @ (self.X_stack.T * W) @ self.y_stack
+        v = self.y_stack - self.X_stack @ beta
+        sigma_2 = (v.T * W) @ v / sum(W) if p is None else (v.T * W) @ v / (self.T * p)
+        theta = np.zeros(1+self.k)
+        theta[0] = np.sqrt(sigma_2)
+        theta[1:] = beta.flatten()
+        return theta
+
     def get_clusterwise_probabilities(self):
         assert self.deltas_hat_final is not None, "probs of each subject belonging to each class called before fitting"
         return np.copy(self.deltas_hat_final)
@@ -213,7 +239,10 @@ class LCGA():
             verbose (bool, optional): Verbose mode. Defaults to True.
             step_M_per_class (bool, optional): Whether to fit each class at a time in M-step.
                                                (Faster if True, and theoretically the same results,
-                                               but option False kept just in case)
+                                               but option False kept just in case). If R_struct is
+                                               multiple of identity, we use Weighted Least Squares
+                                               (a.k.a. WLS, identical to maximum-likelihood estimator)
+                                               and accelerate the estimation even further.
                                                Defaults to True.
 
         Returns:
@@ -258,20 +287,28 @@ class LCGA():
                 theta0[-self.N_classes:] = pis_opt
                 # then, the other parameters:
                 if step_M_per_class:
-                    _, p, s_bar, a_bars, Sas, dtds, Atds = E
+                    deltas_hat_matrix, p, s_bar, a_bars, Sas, dtds, Atds = E
                     off_R = self.N_classes*n_params_R # offset, theta is in the order: Rs, and then betas
-                    for k in range(self.N_classes):
-                        vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
-                        input = np.concatenate(
-                            (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
-                        )
-                        optimize_res = minimize(self.class_M_step_obj, input, args=vals, jac='3-point', options={'disp':False})
-                        theta0[k*n_params_R:(k+1)*n_params_R] = optimize_res.x[0:n_params_R]
-                        theta0[off_R+k*self.k:off_R+(k+1)*self.k] = optimize_res.x[n_params_R:]
-                        if verbose:
-                            print('{}-th EM iteration, class {}: {}'.format(counter, k,
-                            'success' if optimize_res.success else 'failed...'))
-                else:
+                    if self.R_struct == 'diagonal':
+                        for k in range(self.N_classes):
+                            vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
+                            input = np.concatenate(
+                                (theta0[k*n_params_R:(k+1)*n_params_R], theta0[off_R+k*self.k:off_R+(k+1)*self.k])
+                            )
+                            optimize_res = minimize(self.class_M_step_obj, input, args=vals, jac='3-point', options={'disp':False})
+                            theta0[k*n_params_R:(k+1)*n_params_R] = optimize_res.x[0:n_params_R]
+                            theta0[off_R+k*self.k:off_R+(k+1)*self.k] = optimize_res.x[n_params_R:]
+                            if verbose:
+                                print('{}-th EM iteration, class {}: {}'.format(counter, k,
+                                'success' if optimize_res.success else 'failed...'))
+                    else: # WLS possible, faster, and equivalent to MLE for R is multiple of identity
+                        for k in range(self.N_classes):
+                            theta_k = self.WLS_estimates(deltas_hat_matrix[:,k], p[k])
+                            theta0[k] = theta_k[0]
+                            theta0[off_R+k*self.k:off_R+(k+1)*self.k] = theta_k[n_params_R:]
+                            if verbose:
+                                print('{}-th EM iteration, class {} - ok'.format(counter, k))
+                else: # (i.e. do not run M_step per class, but globally and at once)
                     optimize_res = minimize(self.minus_Q_no_pis, theta0[0:-self.N_classes], args=E,
                         jac='3-point', options={'disp':False})
                     theta0[:-self.N_classes] = optimize_res.x
@@ -280,8 +317,6 @@ class LCGA():
                         'success' if optimize_res.success else 'failed...',
                         optimize_res.fun))
                 counter += 1
-            if verbose:
-                print() # break line
             fun = - sum(np.log(pis_opt) * E[1]) # (-1) * sum_k [ log(pi) * sum_i[delta_hat] ]
             if step_M_per_class:
                 for k in range(self.N_classes):
@@ -297,7 +332,8 @@ class LCGA():
                 opt_val = fun
                 theta_opt = theta0
                 E_opt = E
-
+            if verbose:
+                print('end of repetition, optval={}\n'.format(opt_val))
         if verbose:
             print("Optimal value per repetiton with random initialization: {}".format(opt_val_list))
 
