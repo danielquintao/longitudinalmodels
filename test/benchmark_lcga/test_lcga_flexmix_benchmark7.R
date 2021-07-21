@@ -14,9 +14,9 @@ m2 = stepFlexmix(observation ~ time|individual, data=dataset, k = 3, nrep=10,
                               verbose=0, minprior=0, tol=1E-10),
                  model=ourBiasedModel())
 # parameters(m2)
-round(parameters(m2), digits=5)
+round(parameters(m2), digits=3)
 # parameters(m2)["sigma",]^2
-round(parameters(m2)["sigma",]^2, digits=5)
+round(parameters(m2)["sigma",]^2, digits=3)
 prior(m2)
 posterior(m2)
 clusters(m2)        
