@@ -2,6 +2,7 @@ import numpy as np
 import scipy.linalg as linalg
 from utils.optimization_wrapper import gcm_FIML_minimizer
 from numpy.linalg import det, inv, eigvals, matrix_rank
+from scipy.optimize import approx_fprime
 from utils.matrix_utils import flattened2triangular # custom file with utilities for translating matrix from/to flattened form
 from utils.convert_data import convert_label
 
@@ -98,6 +99,25 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def check_identifiability(self):
+        # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
+        dim_in = self.T+self.k*(self.k+1)//2
+        dim_out = self.T*(self.T+1)//2
+        if dim_in > dim_out:
+            return False
+        def f(theta):
+            R = np.eye(self.T) * theta[:self.T]
+            D_upper = flattened2triangular(theta[self.T:], self.k)
+            D = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+            Sigma_hat = R + self.Z @ (D @ self.Z.T) 
+            return np.tril(Sigma_hat).flatten()
+        jac = np.zeros((dim_out, dim_in))
+        theta = np.zeros(dim_in)
+        for i in range(dim_out):
+            g = lambda theta : f(theta)[i]
+            jac[i,:] = approx_fprime(theta, g, 1E-8)
+        return matrix_rank(jac) == dim_in
+
     def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
@@ -112,13 +132,14 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
                                             then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
         """
 
+        identifiable = self.check_identifiability()
         if not force_solver:
-            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
-        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
-            print('WARNING: Identifiability problem with degrees of freedom')
+            assert identifiable, "Identifiability problem"
+        elif not identifiable:
+            print('WARNING: Identifiability problem')
 
-        if matrix_rank(self.Z) < self.k:
-            print("WARNING: the random effects design matrix is not full-rank")
+        if verbose:
+            self.degrees_of_freedom(verbose=True) # prints d.f.
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
@@ -189,6 +210,10 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def check_identifiability(self):
+        # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
+        return (self.T > self.k and matrix_rank(self.Z) == self.k)
+
     def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
@@ -203,13 +228,14 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
                                             then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
         """
 
+        identifiable = self.check_identifiability()
         if not force_solver:
-            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
-        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
-            print('WARNING: Identifiability problem with degrees of freedom')
+            assert identifiable, "Identifiability problem"
+        elif not identifiable:
+            print('WARNING: Identifiability problem')
 
-        if matrix_rank(self.Z) < self.k:
-            print("WARNING: the random effects design matrix is not full-rank")
+        if verbose:
+            self.degrees_of_freedom(verbose=True) # prints d.f.
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
@@ -290,6 +316,25 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def check_identifiability(self):
+        # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
+        dim_in = self.T+self.k*(self.k+1)//2
+        dim_out = self.T*(self.T+1)//2
+        if dim_in > dim_out:
+            return False
+        def f(theta):
+            R = np.eye(self.T) * theta[:self.T]
+            D_upper = flattened2triangular(theta[self.T:], self.k)
+            D = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+            Sigma_hat = R + self.Z @ (D @ self.Z.T) 
+            return np.tril(Sigma_hat).flatten()
+        jac = np.zeros((dim_out, dim_in))
+        theta = np.zeros(dim_in)
+        for i in range(dim_out):
+            g = lambda theta : f(theta)[i]
+            jac[i,:] = approx_fprime(theta, g, 1E-8)
+        return matrix_rank(jac) == dim_in
+
     def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
@@ -304,13 +349,14 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
                                             then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
         """
 
+        identifiable = self.check_identifiability()
         if not force_solver:
-            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
-        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
-            print('WARNING: Identifiability problem with degrees of freedom')
+            assert identifiable, "Identifiability problem"
+        elif not identifiable:
+            print('WARNING: Identifiability problem')
 
-        if matrix_rank(self.Z) < self.k:
-            print("WARNING: the random effects design matrix is not full-rank")
+        if verbose:
+            self.degrees_of_freedom(verbose=True) # prints d.f.
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
@@ -391,6 +437,10 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def check_identifiability(self):
+        # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
+        return (self.T > self.k and matrix_rank(self.Z) == self.k)
+
     def solve(self, verbose=True, force_solver=False, betas_pretty=False):
         """estimate model
 
@@ -405,13 +455,14 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
                                             then fixed effects of class (1,0,..,0), then (0,1,..,0), ..., (0,0,..,1)
         """
 
+        identifiable = self.check_identifiability()
         if not force_solver:
-            assert all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]), "Identifiability problem: you have more parameters than 'information'"
-        elif not all([x > 0 for x in self.degrees_of_freedom(verbose=verbose)]):
-            print('WARNING: Identifiability problem with degrees of freedom')
+            assert identifiable, "Identifiability problem"
+        elif not identifiable:
+            print('WARNING: Identifiability problem')
 
-        if matrix_rank(self.Z) < self.k:
-            print("WARNING: the random effects design matrix is not full-rank")
+        if verbose:
+            self.degrees_of_freedom(verbose=True) # prints d.f.
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
