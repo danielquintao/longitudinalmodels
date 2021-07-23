@@ -4,8 +4,9 @@ from models.LCGA import LCGA
 from utils.gcm_plot import plot, extended_plot
 from utils.lcga_plot import plot_lcga
 from utils.convert_data import convert_label
+from harmonizer.Harmonizer import Harmonizer
 
-def run_pipeline_GCM(y, timesteps, max_degree, R_struct='multiple_identity'):
+def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D=None, R_struct='multiple_identity'):
 
     # 0- apply transformation to input if too big of too small
     # if not ( 1 < max(timesteps) - min(timesteps) < 10):
@@ -28,8 +29,11 @@ def run_pipeline_GCM(y, timesteps, max_degree, R_struct='multiple_identity'):
     # 1- remove outliers and basic treatment
     # TODO
 
-    # 2- call harmonization model
-    # TODO
+    # 2- assertion harmonization model
+    assert (
+        (y_control is not None and src_labels1D is not None) or
+        (y_control is None and src_labels1D is None)
+    ), "in order to use harmonize data, both y_control and src_labels1D must be provided"
 
     # 3- GCM
     print("==========================================================")
@@ -40,12 +44,23 @@ def run_pipeline_GCM(y, timesteps, max_degree, R_struct='multiple_identity'):
             print('degree {} ignored: We recommend to use only degrees lower than #timesteps - 1'.format(degree))
             continue
         print('degree {}-\n'.format(degree))
+        #harmonize data:
+        if y_control is not None:
+            harmonizer = Harmonizer(y_main, y_control, src_labels1D, timesteps, degree)
+            print("harmonizing data")
+            _,_ = harmonizer.fit(verbose=False)
+            y,_ = harmonizer.transform(y_main, y_control, src_labels1D)
+            print("data harmonized")
+        else:
+            y = np.copy(y_main)
+        # apply model:
         gcm = GCM(y, timesteps, degree, R_struct)
         try:
             beta_opt, R_opt, D_opt = gcm.solve(verbose=False)
         except AssertionError as err:
             print('something went wrong while fitting the model:')
             print(err)
+            print()
             continue
         print('Fixed effects:')
         print(beta_opt.reshape(-1,1))
@@ -53,6 +68,15 @@ def run_pipeline_GCM(y, timesteps, max_degree, R_struct='multiple_identity'):
         print(D_opt)
         print('Residual deviations covariance matrix:')
         print(R_opt)
+        print('Extra information - random effects correlation matrix:')
+        d = np.sqrt(np.diag(D_opt))
+        corr_D = D_opt / (d * d.reshape(-1,1))
+        print(corr_D)
+        # big_corr = np.tril(abs(corr_D) > 0.8, k=-1)
+        # if np.any(big_corr):
+        #     print("The following pairs of coefficients have correlation greater than 0.8:")
+        #     print('(0 stands for the intercept, 1 for the slope, etc)')
+        #     print([(k,l) for k,l in np.argwhere(big_corr)[:]])
         plot(beta_opt, timesteps, y, degree)
         print()
 
