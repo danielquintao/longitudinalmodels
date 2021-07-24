@@ -215,12 +215,22 @@ class LCGA():
         assert deltas_hat_k.shape == (self.N,), 'deltas_hat_k should be 1D array with Deltas_ik'
         # build weight matrix
         W = np.repeat(deltas_hat_k, self.T) # diagonal matrix with subseqs of T delta_ik's
-        beta = np.linalg.inv((self.X_stack.T * W) @ self.X_stack) @ (self.X_stack.T * W) @ self.y_stack
-        v = self.y_stack - self.X_stack @ beta
-        sigma_2 = (v.T * W) @ v / sum(W) if p is None else (v.T * W) @ v / (self.T * p)
-        theta = np.zeros(1+self.k)
-        theta[0] = np.sqrt(sigma_2)
-        theta[1:] = beta.flatten()
+        p = p if p else sum(deltas_hat_k)
+        beta = np.linalg.inv(self.X.T@self.X)@(self.X_stack.T * W) @ self.y_stack/p
+        # or: np.linalg.inv((self.X_stack.T * W) @ self.X_stack) @ (self.X_stack.T * W) @ self.y_stack
+        # or: np.linalg.inv(self.X.T@self.X)@self.X.T@np.sum((deltas_hat_k.reshape(-1,1)*self.y), axis=0).reshape(-1,1)/p
+        if self.R_struct == 'multiple_identity':
+            v = self.y_stack - self.X_stack @ beta
+            sigma_2 = (v.T * W) @ v / (self.T * p)
+            theta = np.zeros(1+self.k)
+            theta[0] = np.sqrt(sigma_2)
+            theta[1:] = beta.flatten()
+        else: # self.R_struct == 'diagonal'
+            u = self.y - (self.X@beta).flatten()
+            d = np.diag((u.T*deltas_hat_k)@u/p)
+            theta = np.zeros(self.T+self.k)
+            theta[:self.T] = np.sqrt(d)
+            theta[self.T:] = beta.flatten()
         return theta
 
     def get_clusterwise_probabilities(self):
@@ -231,7 +241,7 @@ class LCGA():
         assert self.predicitons is not None, "predictions of most likely cluster called before fitting"
         return np.copy(self.predicitons)
 
-    def solve(self, nrep=10, verbose=True, step_M_per_class=True):
+    def solve(self, nrep=10, verbose=True, step_M_per_class=True, ML_only=True):
         """fit the LCGA classes
 
         Args:
@@ -244,6 +254,10 @@ class LCGA():
                                                (a.k.a. WLS, identical to maximum-likelihood estimator)
                                                and accelerate the estimation even further.
                                                Defaults to True.
+            ML_only (bool, optional): Whether to use only max. likelihood (instead of Weighted Least Squares)
+                                      even if R_struct is diagonal (in which case WLS differs from the
+                                      maximum likelihood estimator and is aksi faster). Applied only for
+                                      step_M_per_class=True and R_struct='diagonal'. Defaults to True.
 
         Returns:
             (list, list, list): Rs, betas, pis
@@ -289,7 +303,7 @@ class LCGA():
                 if step_M_per_class:
                     deltas_hat_matrix, p, s_bar, a_bars, Sas, dtds, Atds = E
                     off_R = self.N_classes*n_params_R # offset, theta is in the order: Rs, and then betas
-                    if self.R_struct == 'diagonal':
+                    if self.R_struct == 'diagonal' and ML_only :
                         for k in range(self.N_classes):
                             vals = (p[k], s_bar[k], a_bars[k], Sas[k], dtds[k], Atds[k])
                             input = np.concatenate(
@@ -301,10 +315,10 @@ class LCGA():
                             if verbose:
                                 print('{}-th EM iteration, class {}: {}'.format(counter, k,
                                 'success' if optimize_res.success else 'failed...'))
-                    else: # WLS possible, faster, and equivalent to MLE for R is multiple of identity
+                    else: # WLS equivalent to MLE for R is multiple of identity, and faster in any case
                         for k in range(self.N_classes):
                             theta_k = self.WLS_estimates(deltas_hat_matrix[:,k], p[k])
-                            theta0[k] = theta_k[0]
+                            theta0[k*n_params_R:(k+1)*n_params_R] = theta_k[0:n_params_R]
                             theta0[off_R+k*self.k:off_R+(k+1)*self.k] = theta_k[n_params_R:]
                             if verbose:
                                 print('{}-th EM iteration, class {} - ok'.format(counter, k))

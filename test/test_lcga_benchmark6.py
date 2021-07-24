@@ -13,7 +13,7 @@ y = total_data[:,0:4] # love scores
 time = np.array([0., 2., 4., 6.])
 degree = 1
 N_classes = 2
-model = LCGA(y, time, degree, N_classes)
+model = LCGA(y, time, degree, N_classes, R_struct='diagonal')
 Rs, betas, pis = model.solve()
 
 # # test
