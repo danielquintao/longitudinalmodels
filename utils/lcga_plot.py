@@ -37,7 +37,7 @@ def plot_lcga_TWO_groups(betas, time, data, degree, probs_cluster_1):
     # legends
     plt.show()
 
-def plot_lcga(betas, time, data, degree, clusters_pred):
+def plot_lcga(betas, time, data, degree, clusters_pred, title=None, varname=None):
     """plots dataset with points belonging to clusters as predicted by LCGA.
 
     Args:
@@ -46,6 +46,8 @@ def plot_lcga(betas, time, data, degree, clusters_pred):
         data (2D numpy array of shape (N,T)): [time-observations for the N individuals]
         degree (int): degree of the polynomial
         clusters_pred (1D array of type int): most likely cluster of each individual
+        title (str, optional): title for the plot. No title if None. Defaults to None.
+        varname (str, optional): Name of the variable y for the plot. 'y' if None. Defaults to None.
     """
     # we'll take advantage of the similarity between our problem and to plot a GCM estimation with classes
     # and have a very similar function, differing on the data format
@@ -80,5 +82,10 @@ def plot_lcga(betas, time, data, degree, clusters_pred):
     legend = ['group '+str(x) for x in range(n_clusters)]
     handles = [Line2D([0],[0],color=colors[i]) for i in range(n_clusters)]
     plt.legend(handles, legend)
+    plt.xlabel("time steps")
+    varname = 'y' if varname is None else varname
+    plt.ylabel(varname)
+    if title:
+        plt.title(title)
     plt.show()
 

@@ -18,8 +18,8 @@ class ParentExtendedGCMSolver():
         """
         assert len(y) == len(groups)
         # pass groups from categorial to one-hot if necessary
-        if ((len(groups.shape) == 1 or (len(groups.shape) == 2 and groups.shape[1] == 1))
-            and not all([g in [0,1] for g in groups])):
+        groups = groups.reshape(-1,1) if len(groups.shape) == 1 else groups
+        if (groups.shape[1] == 1 and not all([g in [0,1] for g in groups])):
             print('Warning: We converted groups to another representation.')
             print('You should consider explicitly doing the same. See utils.convert_data.convert_labels')
             groups = convert_label(groups, offset=min(groups))

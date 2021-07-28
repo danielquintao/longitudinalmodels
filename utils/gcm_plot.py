@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from utils.lcga_plot import plot_lcga
 
-def plot(vector_eta, time, data, degree):
+def plot(vector_eta, time, data, degree, title=None, varname=None):
     """plots dataset growth curves along with GCM curve
 
     Args:
@@ -12,6 +12,8 @@ def plot(vector_eta, time, data, degree):
         time (list or numpy array of length T): [time points (supposed to be the same for all individuals)]
         data (2D ndarray of shape (N,T)): [time-observations for the N individuals]
         degree (int): degree of the polynomial
+        title (str, optional): title for the plot. No title if None. Defaults to None.
+        varname (str, optional): Name of the variable y for the plot. 'y' if None. Defaults to None.
     """
     assert vector_eta.shape == (degree+1,)
     N,T = data.shape
@@ -24,9 +26,14 @@ def plot(vector_eta, time, data, degree):
     for i in range(N):
         plt.plot(time, data[i], linewidth=1)
     plt.plot(interval, curve, 'k-', linewidth=5)
+    plt.xlabel("time steps")
+    varname = 'y' if varname is None else varname
+    plt.ylabel(varname)
+    if title:
+        plt.title(title)
     plt.show()
 
-def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
+def extended_plot(vector_eta, time, data, groups, groups2plot, degree, title=None, varname=None):
     """plots dataset growth curves along with GCM curve per group.
        The number of groups in inferred from the arguments
        There are two possible data formats. We describe the first data format below.
@@ -46,6 +53,8 @@ def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
                                       have groups2plot = [(0,0), (1,0), (0,1)] for 3 groups represented by 2 variables.
                                       There is support to plot at most 10 groups, but code can be adapted to plot more.
         degree (int): degree of the polynomial
+        title (str, optional): title for the plot. No title if None. Defaults to None.
+        varname (str, optional): Name of the variable y for the plot. 'y' if None. Defaults to None.
     """
     # if groups are listed as 0,1,2,..,#groups-1 or as 1,2,..,#groups and vector_eta is a list
     # of #groups fixed effects, then we will simply call the plot_lcga function whici is more adapted
@@ -86,4 +95,9 @@ def extended_plot(vector_eta, time, data, groups, groups2plot, degree):
     legend = ['group '+str(x) for x in groups2plot]
     handles = [Line2D([0],[0],color=colors[i]) for i in range(len(groups2plot))]
     plt.legend(handles, legend)
+    plt.xlabel("time steps")
+    varname = 'y' if varname is None else varname
+    plt.ylabel(varname)
+    if title:
+        plt.title(title)
     plt.show()
