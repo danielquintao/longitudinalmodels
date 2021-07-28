@@ -161,8 +161,19 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
             extended_plot(betas_opt, timesteps, y, groups_converted, groups2plot, degree, title='GCM w/ groups - degree {}'.format(degree), varname=varname)
         print()
 
-def run_pipeline_LCGA(y, timesteps, max_degree, R_struct='multiple_identity', max_latent_classes=3):
+def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_control=None, src_labels1D=None,
+    R_struct='multiple_identity', varname=None):
 
+    # 1- remove outliers and basic treatment
+    # TODO
+
+    # 2- basic assertions
+    assert (
+        (y_control is not None and src_labels1D is not None) or
+        (y_control is None and src_labels1D is None)
+    ), "in order to use harmonize data, both y_control and src_labels1D must be provided"
+
+    # 3 - LCGA
     print("==========================================================")
     print("      Latent Class Growth Analysis                        ")
     print("==========================================================\n")
@@ -170,9 +181,27 @@ def run_pipeline_LCGA(y, timesteps, max_degree, R_struct='multiple_identity', ma
         if degree >= len(timesteps)-1:
             print('degree {} ignored: We recommend to use only degrees lower than #timesteps - 1'.format(degree))
             continue
+        # harmonize data:
+        if y_control is not None:
+            harmonizer = Harmonizer(y_main, y_control, src_labels1D, timesteps, degree)
+            print("harmonizing data")
+            try:
+                _,_ = harmonizer.fit(verbose=False)
+            except AssertionError as err:
+                print('something went wrong while harmonizing the data:')
+                print(err)
+                print("We will use the original data")
+                y = np.copy(y_main)
+                print()
+            else:
+                y,_ = harmonizer.transform(y_main, y_control, src_labels1D)
+                print("data harmonized")
+        else:
+            y = np.copy(y_main)
+        # apply model:
         for K in range(max_latent_classes,1,-1):
             print('degree {}, {} latent classes-\n'.format(degree, K))
-            lcga = LCGA(y, timesteps, degree, K)
+            lcga = LCGA(y, timesteps, degree, K, R_struct)
             try:
                 print('estimating latent classes...')
                 Rs, betas, pis= lcga.solve(verbose=False)
@@ -188,5 +217,7 @@ def run_pipeline_LCGA(y, timesteps, max_degree, R_struct='multiple_identity', ma
                 print(Rs[i])
                 print()
             preds = lcga.get_predictions()
-            plot_lcga(betas, timesteps, y, degree, preds)
+            print("Number of subjects assigned to each cluster (by greatest posterior probability):", [sum(preds == i) for i in range(K)])
+            preds = lcga.get_predictions()
+            plot_lcga(betas, timesteps, y, degree, preds, title='LCGA - degree {} and {} clusters'.format(degree, K), varname=varname)
             print()
