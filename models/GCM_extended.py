@@ -22,7 +22,7 @@ class ParentExtendedGCMSolver():
         if (groups.shape[1] == 1 and not all([g in [0,1] for g in groups])):
             print('Warning: We converted groups to another representation.')
             print('You should consider explicitly doing the same. See utils.convert_data.convert_labels')
-            groups = convert_label(groups, offset=min(groups))
+            groups = convert_label(groups, offset=np.min(groups, axis=None))
         self.mu_bar = np.mean(np.concatenate((y,groups),axis=1), axis=0) # sample mean
         self.S = np.cov(np.concatenate((y,groups),axis=1), rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)
         self.x_bar = np.mean(groups, axis=0) # mean of binary vars encoding group membership

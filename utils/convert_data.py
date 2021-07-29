@@ -13,6 +13,7 @@ def convert_label(groups, offset=0):
                   N_classes-1 times, and the other labels are (1,0,..0), (0,1,..,0), ..., (0,0,..,1)
     """
     assert groups.shape == (len(groups),) or groups.shape == (len(groups),1), "wrong format"
+    groups = groups.flatten() if len(groups.shape) == 2 else groups
     assert np.issubdtype(groups.dtype, np.integer), 'group labels should be integers'
     assert offset == 0 or offset == 1, "the slowest label should be 0. Check your convention please"
     max_element = max(groups)

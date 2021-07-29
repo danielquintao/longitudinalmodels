@@ -102,7 +102,7 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
     if (groups.shape[1] == 1 and not all([g in [0,1] for g in groups])): # need to convert to one-hot
         print('Note: We will convert the groups from the categorical representation to a custom one-hot representation')
         print('(e.g. groups 1,2,3,4 would become (0,0,0),(1,0,0),(0,1,0),(0,0,1) resp.\n')
-        groups_converted = convert_label(groups, offset=min(groups))
+        groups_converted = convert_label(groups, offset=np.min(groups,axis=None))
         plot_with_categorical = True
     else: # already received groups in good format
         groups_converted = groups
@@ -133,14 +133,17 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         # apply model:
         gcm = GCM(y, timesteps, degree, R_struct, groups_converted)
         try:
-            betas_opt, R_opt, D_opt = gcm.solve(verbose=False, betas_pretty=True)
+            betas_opt, R_opt, D_opt = gcm.solve(verbose=False) # XXX it seems dum not to use betas_pretty=True, but extended_plot uses the ugly beta format
         except AssertionError as err:
             print('something went wrong while fitting the model:')
             print(err)
             continue
         print('Fixed effects for each group:')
-        for beta_i in betas_opt:
-            print(beta_i)
+        beta = betas_opt[0:degree+1].reshape(-1,1)
+        print(beta)
+        for i in range(1,groups_converted.shape[1]+1):
+            beta_i = betas_opt[0:degree+1] + betas_opt[i*(degree+1):(i+1)*(degree+1)]
+            print(beta_i.reshape(-1,1))
         print('Random effects covariance matrix:')
         print(D_opt)
         print('Residual deviations covariance matrix:')
