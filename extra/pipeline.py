@@ -3,6 +3,7 @@ from models.GCM import GCM
 from models.LCGA import LCGA
 from utils.gcm_plot import plot, extended_plot
 from utils.lcga_plot import plot_lcga
+from utils.model_selection_plot import plot_loglikelihoods, plot_information_criterions
 from utils.convert_data import convert_label
 from harmonizer.Harmonizer import Harmonizer
 from harmonizer.Harmonizer_extended import ExtendedHarmonizer
@@ -180,10 +181,12 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_con
     print("==========================================================")
     print("      Latent Class Growth Analysis                        ")
     print("==========================================================\n")
+    logliks = {} # loglikelihood of all models in the form {degree: {K: (loglik, n_params)}}
     for degree in range(max_degree, 0, -1):
         if degree >= len(timesteps)-1:
             print('degree {} ignored: We recommend to use only degrees lower than #timesteps - 1'.format(degree))
             continue
+        logliks[degree] = {}
         # harmonize data:
         if y_control is not None:
             harmonizer = Harmonizer(y_main, y_control, src_labels1D, timesteps, degree)
@@ -202,8 +205,10 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_con
         else:
             y = np.copy(y_main)
         # apply model:
-        for K in range(max_latent_classes,1,-1):
-            print('degree {}, {} latent classes-\n'.format(degree, K))
+        for K in range(max_latent_classes,0,-1):
+            print('degree {}, {} latent classes{}-\n'
+                .format(degree, K, ' (simple regression)' if K==1 else '')
+            )
             lcga = LCGA(y, timesteps, degree, K, R_struct)
             try:
                 print('estimating latent classes...')
@@ -221,6 +226,17 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_con
                 print()
             preds = lcga.get_predictions()
             print("Number of subjects assigned to each cluster (by greatest posterior probability):", [sum(preds == i) for i in range(K)])
-            preds = lcga.get_predictions()
+            logliks[degree][K] = (lcga.get_loglikelihood(), lcga.get_n_params())
             plot_lcga(betas, timesteps, y, degree, preds, title='LCGA - degree {} and {} clusters'.format(degree, K), varname=varname)
             print()
+    # model comparison:
+    if max_latent_classes > 2:
+        print("Generating graph for comparing the log-likelihood for different combinations")
+        print("Note: Greater Ks and degrees always have a higher likelihood,"+
+        " but are not necessarily better")
+        plot_loglikelihoods(logliks, 'degree', 'K')
+        print("Geenrating graph of Akaike Information Criterion and Bayesian Information Criterion")
+        print("Slower values are supposed to indicate a better compromise between data explanation "+
+        "and complexity of the model")
+        print("For big datasets, BIC is usually preferred to AIC")
+        plot_information_criterions(logliks, 'degree', 'K', len(y))

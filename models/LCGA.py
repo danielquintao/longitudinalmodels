@@ -248,6 +248,10 @@ class LCGA():
         assert self.loglik is not None, "likelihood of model called before fitting"
         return self.loglik
 
+    def get_n_params(self):
+        n_params_R = self.T if self.R_struct == 'diagonal' else 1
+        return self.N_classes * (self.k + n_params_R + 1) # +1 because of the class priors pi_k
+
     def solve(self, nrep=10, verbose=True, step_M_per_class=True, ML_only=True):
         """fit the LCGA classes
 
@@ -356,6 +360,6 @@ class LCGA():
         # 2- most likely class for each subject
         self.predicitons = np.argmax(self.deltas_hat_final, axis=1).astype('int')
         # 3- log-likelihood
-        self.loglik = opt_val
+        self.loglik = -opt_val
 
         return self.parse_theta(theta_opt, pis_included=True)
