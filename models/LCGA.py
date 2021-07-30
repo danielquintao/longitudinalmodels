@@ -23,6 +23,7 @@ class LCGA():
         self.X_stack = np.tile(X, [self.N, 1]) # for M-step closed formula (WLS)
         self.deltas_hat_final = None # probs of each subject belonging to each class after fit
         self.predicitons = None # most likely class per subject after fit
+        self.loglik = None # loglikelihood of the last call to solve()
 
     def multivar_normal_PDF(self, y, R, beta):
         # fast way of inverting R (which is either multiple of identity of just diagonal)
@@ -243,6 +244,10 @@ class LCGA():
         assert self.predicitons is not None, "predictions of most likely cluster called before fitting"
         return np.copy(self.predicitons)
 
+    def get_loglikelihood(self):
+        assert self.loglik is not None, "likelihood of model called before fitting"
+        return self.loglik
+
     def solve(self, nrep=10, verbose=True, step_M_per_class=True, ML_only=True):
         """fit the LCGA classes
 
@@ -350,5 +355,7 @@ class LCGA():
         self.deltas_hat_final = E_opt[0]
         # 2- most likely class for each subject
         self.predicitons = np.argmax(self.deltas_hat_final, axis=1).astype('int')
+        # 3- log-likelihood
+        self.loglik = opt_val
 
         return self.parse_theta(theta_opt, pis_included=True)
