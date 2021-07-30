@@ -6,6 +6,8 @@ import random
 class LCGA():
     def __init__(self, y, timesteps, degree, N_classes, R_struct="multiple_identity"):
         # TODO asserts
+        assert np.all(~np.isnan(y)), 'y should not contain NaNs'
+        assert np.all(~np.isinf(y)), 'y should not contain np.inf\'s'
         self.N = len(y)
         self.k = degree+1 # we include the intercept (coefficient of order 0)
         self.N_classes = N_classes

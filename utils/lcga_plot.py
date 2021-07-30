@@ -56,8 +56,10 @@ def plot_lcga(betas, time, data, degree, clusters_pred, title=None, varname=None
     assert clusters_pred.shape in [(N,),(N,1)]
     if clusters_pred.shape == (N,1):
         clusters_pred = clusters_pred.flatten() 
-    if np.issubdtype(clusters_pred.dtype, np.floating):
-        clusters_pred = clusters_pred.astype(int)
+    if not np.issubdtype(clusters_pred.dtype, np.integer):
+        clusterspred_int = clusters_pred.astype(int)
+        assert np.all(clusterspred_int == clusters_pred), 'clusters_pred entries in categorical form should belong to some np.integer dtype'
+        clusters_pred = clusterspred_int
     n_clusters = max(clusters_pred)+1
     assert len(betas) == n_clusters
     colors = {0:'tab:blue', 1:'tab:orange', 2:'tab:green', 3:'tab:red', 4:'tab:purple',

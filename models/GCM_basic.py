@@ -8,6 +8,8 @@ from utils.gcm_plot import plot
 
 class ParentGCMSolver():
     def __init__(self, y, timesteps, degree):
+        assert np.all(~np.isnan(y)), 'y should not contain NaNs'
+        assert np.all(~np.isinf(y)), 'y should not contain np.inf\'s'
         self.mu_bar = np.mean(y, axis=0) # sample mean
         self.S = np.cov(y, rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)
         self.N = len(y)

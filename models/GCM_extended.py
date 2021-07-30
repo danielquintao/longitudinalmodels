@@ -17,11 +17,19 @@ class ParentExtendedGCMSolver():
             degree (int): degree of the polynomial to fit
         """
         assert len(y) == len(groups)
+        assert np.all(~np.isnan(y)), 'y should not contain NaNs'
+        assert np.all(~np.isinf(y)), 'y should not contain np.inf\'s'
+        assert np.all(~np.isnan(groups)), 'groups should not contain NaNs'
+        assert np.all(~np.isinf(groups)), 'groups should not contain np.inf\'s'
         # pass groups from categorial to one-hot if necessary
         groups = groups.reshape(-1,1) if len(groups.shape) == 1 else groups
         if (groups.shape[1] == 1 and not all([g in [0,1] for g in groups])):
             print('Warning: We converted groups to another representation.')
             print('You should consider explicitly doing the same. See utils.convert_data.convert_labels')
+            if not np.issubdtype(groups.dtype, np.integer):
+                groups_int = groups.astype(int)
+                assert np.all(groups_int == groups), 'groups entries in categorical form should belong to some np.integer dtype'
+                groups = groups_int
             groups = convert_label(groups, offset=np.min(groups, axis=None))
         self.mu_bar = np.mean(np.concatenate((y,groups),axis=1), axis=0) # sample mean
         self.S = np.cov(np.concatenate((y,groups),axis=1), rowvar=False, bias=True) # sample covariance (divided by N i.e. biased)

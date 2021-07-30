@@ -13,22 +13,15 @@ total_data = np.genfromtxt("test/playground_data/lovedata.csv", delimiter=",", s
 # print(total_data)
 y = total_data[:,0:4] # love scores
 time = np.array([-3,3,9,36])
-
 degree = 1
 
-# print("==== Extended GCM Solver (known groups) w/ diag. R (Scipy.optimization) ====")
-
-# # We'll now test the GCM solver with known groups (predictors of fixed slope)
-# groups_categoric = total_data[:,-3].astype('int')
-
-# esgcm = GCM(y, time, degree, R_struct='diagonal', groups=groups_categoric)
-# esbeta_opt, esR_opt, esD_opt = esgcm.solve()
-
-# extended_plot(esbeta_opt, time, y, convert_label(groups_categoric, offset=1),
-#     [(0,0),(1,0),(0,1)] ,degree)
-
-# essigma = esR_opt + esgcm.Z @ esD_opt @ esgcm.Z.T
-# print("Sigma:\n{}".format(essigma))
+# input missing data automatically:
+# choose five indiiduals and put nan in one of their observation
+for _ in range(5):
+    who = np.random.choice(np.arange(len(y)))
+    where = np.random.choice(np.arange(y.shape[1]))
+    y[who, where] = np.nan
+        
 
 print("==== Extended GCM Solver (known groups) w/ time-indep. errors (Scipy.optimization) ====")
 
