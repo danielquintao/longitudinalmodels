@@ -167,7 +167,7 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
             extended_plot(betas_opt, timesteps, y, groups_converted, groups2plot, degree, title='GCM w/ groups - degree {}'.format(degree), varname=varname)
         print()
 
-def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_control=None, src_labels1D=None,
+def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_classes=3, y_control=None, src_labels1D=None,
     R_struct='multiple_identity', varname=None):
 
     # 1- remove outliers and basic treatment
@@ -178,13 +178,14 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_con
         (y_control is not None and src_labels1D is not None) or
         (y_control is None and src_labels1D is None)
     ), "in order to use harmonize data, both y_control and src_labels1D must be provided"
+    assert min_degree>=1, "min_degree should be at least 1"
 
     # 3 - LCGA
     print("==========================================================")
     print("      Latent Class Growth Analysis                        ")
     print("==========================================================\n")
     logliks = {} # loglikelihood of all models in the form {degree: {K: (loglik, n_params)}}
-    for degree in range(max_degree, 0, -1):
+    for degree in range(max_degree, min_degree-1, -1):
         if degree >= len(timesteps)-1:
             print('degree {} ignored: We recommend to use only degrees lower than #timesteps - 1'.format(degree))
             continue
