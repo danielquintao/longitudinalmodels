@@ -245,12 +245,23 @@ class LCGA():
         return np.copy(self.predicitons)
 
     def get_loglikelihood(self):
+        """get log-likelihood of the already-fitted model
+
+        Returns:
+            scalar: log-ikelihood
+        """
         assert self.loglik is not None, "likelihood of model called before fitting"
         return self.loglik
 
     def get_n_params(self):
+        """get the number of non-superfluous parameters (i.e. degrees of freedom)
+
+        Returns:
+            scalar: defrees of freedom
+        """
         n_params_R = self.T if self.R_struct == 'diagonal' else 1
-        return self.N_classes * (self.k + n_params_R + 1) # +1 because of the class priors pi_k
+        n_prior = self.N_classes-1 # we actually have N_classes pis, but 1 of them is superflous (constraint SUM==1)
+        return self.N_classes * (self.k + n_params_R) + n_prior # +1 because of the class priors pi_k
 
     def solve(self, nrep=10, verbose=True, step_M_per_class=True, ML_only=True):
         """fit the LCGA classes

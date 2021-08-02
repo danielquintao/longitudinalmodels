@@ -59,7 +59,7 @@ def plot_information_criterions(vals, key1_name, key2_name, N):
         for key2 in x2:
             loglik, n_params = vals[key1][key2]
             aic.append(2*(n_params-loglik))
-            bic.append(2*(log_N*n_params-loglik))
+            bic.append(log_N*n_params-2*loglik)
         plt.plot(x2, aic, 'o-', color=colors[i])
         plt.plot(x2, bic, 'o--', color=colors[i])
         min_x = min(min_x,min(x2))

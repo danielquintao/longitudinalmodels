@@ -7,6 +7,8 @@ from utils.model_selection_plot import plot_loglikelihoods, plot_information_cri
 from utils.convert_data import convert_label
 from harmonizer.Harmonizer import Harmonizer
 from harmonizer.Harmonizer_extended import ExtendedHarmonizer
+from scipy.stats import chi2
+from itertools import combinations
 
 def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D=None,
     R_struct='multiple_identity', varname=None):
@@ -231,12 +233,25 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, max_latent_classes=3, y_con
             print()
     # model comparison:
     if max_latent_classes > 2:
-        print("Generating graph for comparing the log-likelihood for different combinations")
+        print("generating graph of the log-likelihood for different combinations...")
         print("Note: Greater Ks and degrees always have a higher likelihood,"+
         " but are not necessarily better")
         plot_loglikelihoods(logliks, 'degree', 'K')
-        print("Geenrating graph of Akaike Information Criterion and Bayesian Information Criterion")
-        print("Slower values are supposed to indicate a better compromise between data explanation "+
-        "and complexity of the model")
+        print()
+        print("generating graph of Akaike Information Criterion and Bayesian Information Criterion...")
+        print("Slower values are supposed to indicate a better compromise between explaining data "+
+        "and simplifying the model")
         print("For big datasets, BIC is usually preferred to AIC")
+        print()
         plot_information_criterions(logliks, 'degree', 'K', len(y))
+    # summary
+    print('Summary: model selection')
+    for k1 in logliks:
+        for k2 in sorted(logliks[k1]):
+            n_params = logliks[k1][k2][1]
+            loglik = logliks[k1][k2][0]
+            print('degree {}, K {} : loglik = {}, df={}, AIC = {}, BIC = {}'
+                .format(k1, k2, loglik, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))        
+    print()
+
+
