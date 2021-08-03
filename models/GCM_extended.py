@@ -52,6 +52,20 @@ class ParentExtendedGCMSolver():
         for i in range(1,degree+1):
             Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
         self.Z = Z
+        self.loglik = None # loglikelihood of the last call to solve()
+
+    def discrepancy_to_loglik(self, val): # FIXME NOT YIELDING SAME RESULTS AS LAVAAN (while basic GCM does)
+        val += np.log(det(self.S)) + self.T + self.N_groups + (self.T+self.N_groups)*np.log(2*np.pi)
+        return -(self.N/2)*val
+
+    def get_loglikelihood(self):
+        """get log-likelihood of the already-fitted model
+
+        Returns:
+            scalar: log-likelihood
+        """
+        assert self.loglik is not None, "likelihood of model called before fitting"
+        return self.loglik
 
     def pretty_beta(self, betas_opt):
         betas = [betas_opt[0:self.k].reshape(-1,1)]
@@ -106,6 +120,14 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         if verbose:
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
+
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.p + self.k*(self.k+1)//2 + self.T # resp betas, D, R
 
     def check_identifiability(self):
         # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
@@ -167,6 +189,9 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
@@ -218,6 +243,14 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.p + self.k*(self.k+1)//2 + 1 # resp betas, D, R
+
     def check_identifiability(self):
         # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
         return (self.T > self.k and matrix_rank(self.Z) == self.k)
@@ -263,6 +296,9 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
@@ -323,6 +359,14 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         if verbose:
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
+
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.p + self.k*(self.k+1)//2 + self.T # resp betas, D, R
 
     def check_identifiability(self):
         # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
@@ -386,6 +430,9 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
         return beta_opt, R_opt, D_opt
@@ -445,6 +492,14 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.p + self.k*(self.k+1)//2 + 1 # resp betas, D, R
+
     def check_identifiability(self):
         # we'll check identifiability as if there was ONE group (so we'll use k instead of p below)
         return (self.T > self.k and matrix_rank(self.Z) == self.k)
@@ -492,6 +547,9 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    

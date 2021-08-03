@@ -254,10 +254,10 @@ class LCGA():
         return self.loglik
 
     def get_n_params(self):
-        """get the number of non-superfluous parameters (i.e. degrees of freedom)
+        """get the number of non-superfluous parameters
 
         Returns:
-            scalar: defrees of freedom
+            scalar: number of non-superfluous parameters
         """
         n_params_R = self.T if self.R_struct == 'diagonal' else 1
         n_prior = self.N_classes-1 # we actually have N_classes pis, but 1 of them is superflous (constraint SUM==1)

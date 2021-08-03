@@ -22,6 +22,20 @@ class ParentGCMSolver():
             X = np.concatenate((X, (self.time**i).reshape(-1,1)), axis=1)
         self.X = X
         self.Z = X
+        self.loglik = None # loglikelihood of the last call to solve()
+
+    def discrepancy_to_loglik(self, val):
+        val += np.log(det(self.S)) + self.T + + self.T*np.log(2*np.pi)
+        return -(self.N/2)*val
+
+    def get_loglikelihood(self):
+        """get log-likelihood of the already-fitted model
+
+        Returns:
+            scalar: log-likelihood
+        """
+        assert self.loglik is not None, "likelihood of model called before fitting"
+        return self.loglik
 
 #----------------------------------------------------------------------------------------------#
 
@@ -61,6 +75,14 @@ class DiagGCMSolver(ParentGCMSolver):
         if verbose:
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
+
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.k + self.k*(self.k+1)//2 + self.T # resp beta, D, R
 
     def check_identifiability(self):
         dim_in = self.T+self.p*(self.p+1)//2
@@ -119,6 +141,9 @@ class DiagGCMSolver(ParentGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+
         return beta_opt, R_opt, D_opt
 
 class TimeIndepErrorGCMSolver(ParentGCMSolver):
@@ -158,6 +183,14 @@ class TimeIndepErrorGCMSolver(ParentGCMSolver):
         if verbose:
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
+
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.k + self.k*(self.k+1)//2 + 1 # resp beta, D, R
 
     def check_identifiability(self):
         return (self.T > self.p and matrix_rank(self.Z) == self.p)
@@ -201,6 +234,9 @@ class TimeIndepErrorGCMSolver(ParentGCMSolver):
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         return beta_opt, R_opt, D_opt
 
@@ -250,6 +286,14 @@ class DiagGCMLavaanLikeSolver(ParentGCMSolver):
         if verbose:
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
+
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.k + self.k*(self.k+1)//2 + self.T # resp beta, D, R
 
     def check_identifiability(self):
         dim_in = self.T+self.p*(self.p+1)//2
@@ -310,6 +354,9 @@ class DiagGCMLavaanLikeSolver(ParentGCMSolver):
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+
         return beta_opt, R_opt, D_opt
 
 class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMSolver):
@@ -358,6 +405,14 @@ class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMSolver):
             print("Total df: {} ({} for beta, {} for (co)variances)".format(df_beta+df_vars_covars, df_beta, df_vars_covars))
         return df_beta, df_vars_covars
 
+    def get_n_params(self):
+        """get the number of non-superfluous parameters
+
+        Returns:
+            scalar: number of non-superfluous parameters
+        """
+        return self.k + self.k*(self.k+1)//2 + 1 # resp beta, D, R
+
     def check_identifiability(self):
         return (self.T > self.p and matrix_rank(self.Z) == self.p)
 
@@ -402,6 +457,9 @@ class TimeIndepErrorGCMLavaanLikeSolver(ParentGCMSolver):
 
         assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+
+        # store log-likelihood
+        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         return beta_opt, R_opt, D_opt
 

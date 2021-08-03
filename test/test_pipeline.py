@@ -11,16 +11,16 @@ from extra.pipeline import run_pipeline_GCM, run_pipeline_LCGA, run_pipeline_ext
 total_data = np.genfromtxt("test/playground_data/lovedata.csv", delimiter=",", skip_header=1)
 y = total_data[:,0:4] # love scores
 time = np.array([-3,3,9,36])
-# ## groups as categorical number
-# groups = total_data[:,-3]
-# # run_pipeline_GCM(y, time, 2)
-# run_pipeline_extended_GCM(y, time, 2, groups)
+## groups as categorical number
+groups = total_data[:,-3]
+# run_pipeline_GCM(y, time, 2)
+run_pipeline_extended_GCM(y, time, 2, groups)
 # ## groups as custom one-hot
 # groups2 = total_data[:,-2:]
-# # run_pipeline_GCM(y, time, 2)
+# run_pipeline_GCM(y, time, 2)
 # run_pipeline_extended_GCM(y, time, 2, groups2)
-## LCGA
-run_pipeline_LCGA(y, time, max_degree=1, max_latent_classes=3)
+# ## LCGA
+# run_pipeline_LCGA(y, time, max_degree=1, max_latent_classes=3)
 
 # ## ultimate dataset (allows harmonization)
 # main_data = np.genfromtxt("harmonizer/fake_data/ultimate_dataset_main.csv", delimiter=",", skip_header=0)

@@ -72,6 +72,11 @@ def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D
         #     print("The following pairs of coefficients have correlation greater than 0.8:")
         #     print('(0 stands for the intercept, 1 for the slope, etc)')
         #     print([(k,l) for k,l in np.argwhere(big_corr)[:]])
+        df1, df2 = gcm.degrees_of_freedom()
+        df = df1 + df2
+        n_params = gcm.get_n_params()
+        loglik = gcm.get_loglikelihood()
+        print("loglik = {}, df = {}, nb params = {}, AIC = {}, BIC = {}".format(loglik, df, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))
         plot(beta_opt, timesteps, y, degree, title='GCM - degree {}'.format(degree), varname=varname)
         print()
 
@@ -160,6 +165,11 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         #     print("The following pairs of coefficients have correlation greater than 0.8:")
         #     print('(0 stands for the intercept, 1 for the slope, etc)')
         #     print([(k,l) for k,l in np.argwhere(big_corr)[:]])
+        df1, df2 = gcm.degrees_of_freedom()
+        df = df1 + df2
+        n_params = gcm.get_n_params()
+        loglik = gcm.get_loglikelihood()
+        print("loglik = {}, df = {}, nb params = {}, AIC = {}, BIC = {}".format(loglik, df, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))
         if plot_with_categorical:
             plot_lcga(gcm.pretty_beta(betas_opt), timesteps, y, degree, groups-min(groups), title='GCM w/ groups - degree {}'.format(degree), varname=varname)
         else:
@@ -251,7 +261,7 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
         for k2 in sorted(logliks[k1]):
             n_params = logliks[k1][k2][1]
             loglik = logliks[k1][k2][0]
-            print('degree {}, K {} : loglik = {}, df={}, AIC = {}, BIC = {}'
+            print('degree {}, K {} : loglik = {}, nb params = {}, AIC = {}, BIC = {}'
                 .format(k1, k2, loglik, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))        
     print()
 
