@@ -52,6 +52,22 @@ class ParentExtendedGCMSolver():
         for i in range(1,degree+1):
             Z = np.concatenate((Z, (self.time**i).reshape(-1,1)), axis=1)
         self.Z = Z
+        # some other statistics, per group:
+        self.mus_per_group = []
+        self.Ss_per_group = []
+        self.Ns_per_group = []
+        curr = np.zeros(self.N_groups)
+        y_ = y[np.all(groups==curr, axis=1)]
+        self.mus_per_group.append(np.mean(y_, axis=0))
+        self.Ss_per_group.append(np.cov(y_, rowvar=False, bias=True))
+        self.Ns_per_group.append(len(y_))
+        for i in range(0, self.N_groups):
+            curr = np.zeros(self.N_groups)
+            curr[i] = 1
+            y_ = y[np.all(groups==curr, axis=1)]
+            self.mus_per_group.append(np.mean(y_, axis=0))
+            self.Ss_per_group.append(np.cov(y_, rowvar=False, bias=True))
+            self.Ns_per_group.append(len(y_))
         self.loglik = None # loglikelihood of the last call to solve()
 
     def discrepancy_to_loglik(self, val): # FIXME NOT YIELDING SAME RESULTS AS LAVAAN (while basic GCM does)
@@ -113,6 +129,26 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :) 
         self.T - self.N_groups)
         return f
+
+    def loglikelihood(self, theta):
+        # recover beta, R, D:
+        betas_per_group = self.pretty_beta(theta[0:self.p])
+        R = np.eye(self.T) * (theta[self.p:self.p+self.T] ** 2)
+        D_upper = flattened2triangular(theta[self.p+self.T:], self.k)
+        D = D_upper.T @ D_upper
+        # auxiliary variables
+        Sigma_hat = R + self.Z@ D @self.Z.T
+        inv_sigma_hat = inv(Sigma_hat)
+        log_det_sigma_hat = np.log(det(Sigma_hat))
+        # loglikelihood (in a matricial form)
+        loglik = (-1/2) * ( 
+        sum([Ng * np.trace(S @ inv_sigma_hat) for Ng,S in zip(self.Ns_per_group,self.Ss_per_group)])
+        + self.N * (log_det_sigma_hat + self.T*np.log(2*np.pi))
+        )
+        for Ng, mu_bar, beta in zip(self.Ns_per_group,self.mus_per_group,betas_per_group):
+            mu = mu_bar.reshape(-1,1) # fix shape
+            loglik -= 1/2 * Ng * (mu - self.Z @ beta).T @ inv_sigma_hat @  (mu - self.Z @ beta)
+        return loglik[0][0]
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -190,7 +226,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
         # store log-likelihood
-        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+        self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
@@ -235,6 +271,27 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         (self.mu_bar-mu_hat).T @ inv_sigma_hat @ (self.mu_bar-mu_hat) - # NOTE self.mu_bar-mu_hat is 1D and ".T" does nothing, but this yields the right result :)
         self.T - self.N_groups)
         return f
+
+    def loglikelihood(self, theta):
+        # recover beta, R, D:
+        betas_per_group = self.pretty_beta(theta[0:self.p])
+        R_sigma = theta[self.p] ** 2 # to positivate
+        R = R_sigma * np.eye(self.T)
+        D_upper = flattened2triangular(theta[self.p+1:], self.k)
+        D = D_upper.T @ D_upper
+        # auxiliary variables
+        Sigma_hat = R + self.Z@ D @self.Z.T
+        inv_sigma_hat = inv(Sigma_hat)
+        log_det_sigma_hat = np.log(det(Sigma_hat))
+        # loglikelihood (in a matricial form)
+        loglik = (-1/2) * ( 
+        sum([Ng * np.trace(S @ inv_sigma_hat) for Ng,S in zip(self.Ns_per_group,self.Ss_per_group)])
+        + self.N * (log_det_sigma_hat + self.T*np.log(2*np.pi))
+        )
+        for Ng, mu_bar, beta in zip(self.Ns_per_group,self.mus_per_group,betas_per_group):
+            mu = mu_bar.reshape(-1,1) # fix shape
+            loglik -= 1/2 * Ng * (mu - self.Z @ beta).T @ inv_sigma_hat @  (mu - self.Z @ beta)
+        return loglik[0][0]
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -298,7 +355,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
         # store log-likelihood
-        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+        self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
@@ -352,6 +409,26 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         if f < 0:
             return 0 # the discrepancy func should be always non-negative; lavaan does this as well
         return f
+
+    def loglikelihood(self, theta):
+        # recover beta, R, D:
+        betas_per_group = self.pretty_beta(theta[0:self.p])
+        R = np.eye(self.T) * theta[self.p:self.p+self.T]
+        D_upper = flattened2triangular(theta[self.p+self.T:], self.k)
+        D = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+        # auxiliary variables
+        Sigma_hat = R + self.Z@ D @self.Z.T
+        inv_sigma_hat = inv(Sigma_hat)
+        log_det_sigma_hat = np.log(det(Sigma_hat))
+        # loglikelihood (in a matricial form)
+        loglik = (-1/2) * ( 
+        sum([Ng * np.trace(S @ inv_sigma_hat) for Ng,S in zip(self.Ns_per_group,self.Ss_per_group)])
+        + self.N * (log_det_sigma_hat + self.T*np.log(2*np.pi))
+        )
+        for Ng, mu_bar, beta in zip(self.Ns_per_group,self.mus_per_group,betas_per_group):
+            mu = mu_bar.reshape(-1,1) # fix shape
+            loglik -= 1/2 * Ng * (mu - self.Z @ beta).T @ inv_sigma_hat @  (mu - self.Z @ beta)
+        return loglik[0][0]
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -431,7 +508,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
         # store log-likelihood
-        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+        self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
@@ -484,6 +561,27 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         if f < 0:
             return 0 # the discrepancy func should be always non-negative; lavaan does this as well
         return f
+
+    def loglikelihood(self, theta):
+        # recover beta, R, D:
+        betas_per_group = self.pretty_beta(theta[0:self.p])
+        R_sigma = theta[self.p]
+        R = R_sigma * np.eye(self.T)
+        D_upper = flattened2triangular(theta[self.p+1:], self.k)
+        D = D_upper + D_upper.T - np.eye(self.k)*np.diag(D_upper)
+        # auxiliary variables
+        Sigma_hat = R + self.Z@ D @self.Z.T
+        inv_sigma_hat = inv(Sigma_hat)
+        log_det_sigma_hat = np.log(det(Sigma_hat))
+        # loglikelihood (in a matricial form)
+        loglik = (-1/2) * ( 
+        sum([Ng * np.trace(S @ inv_sigma_hat) for Ng,S in zip(self.Ns_per_group,self.Ss_per_group)])
+        + self.N * (log_det_sigma_hat + self.T*np.log(2*np.pi))
+        )
+        for Ng, mu_bar, beta in zip(self.Ns_per_group,self.mus_per_group,betas_per_group):
+            mu = mu_bar.reshape(-1,1) # fix shape
+            loglik -= 1/2 * Ng * (mu - self.Z @ beta).T @ inv_sigma_hat @  (mu - self.Z @ beta)
+        return loglik[0][0]
 
     def degrees_of_freedom(self, verbose=False):
         df_beta = self.T + self.T*self.N_groups - self.p
@@ -549,7 +647,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
 
         # store log-likelihood
-        self.loglik = self.discrepancy_to_loglik(self.discrepancy(theta_opt))
+        self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
 
         if betas_pretty:
             return self.pretty_beta(beta_opt), R_opt, D_opt    
