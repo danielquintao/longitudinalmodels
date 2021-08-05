@@ -337,6 +337,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
 
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
+        # f = lambda theta : -self.loglikelihood(theta)
         theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
         assert success, "WARNING: optimization did not converge"
 
