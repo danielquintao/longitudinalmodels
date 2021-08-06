@@ -210,7 +210,7 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
         theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
-        assert success, "WARNING: optimization did not converge"
+        assert success, "WARNING: optimization did not converge\n"
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -222,8 +222,18 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
             print("R", R_opt)
             print("D", D_opt)
 
-        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
-        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+        if any(linalg.eigvalsh(R_opt) < 0):
+            text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
+        if any(linalg.eigvalsh(D_opt) < 0):
+            text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -339,7 +349,7 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
         self.not_pos_def_warning_flag = False
         # f = lambda theta : -self.loglikelihood(theta)
         theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
-        assert success, "WARNING: optimization did not converge"
+        assert success, "WARNING: optimization did not converge\n"
 
         # recover optimal beta, R, D
         beta_opt = theta_opt[0:self.p]
@@ -352,8 +362,18 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
             print("R", R_opt)
             print("D", D_opt)
 
-        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
-        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+        if any(linalg.eigvalsh(R_opt) < 0):
+            text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
+        if any(linalg.eigvalsh(D_opt) < 0):
+            text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -491,7 +511,7 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
         theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,self.T,(self.k,self.k)], verbose=verbose)
-        assert success, "WARNING: optimization did not converge"
+        assert success, "WARNING: optimization did not converge\n"
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
 
@@ -505,8 +525,18 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("R", R_opt)
             print("D", D_opt)
 
-        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
-        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+        if any(linalg.eigvalsh(R_opt) < 0):
+            text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
+        if any(linalg.eigvalsh(D_opt) < 0):
+            text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -629,7 +659,7 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
         # minimize discrepancy
         self.not_pos_def_warning_flag = False
         theta_opt, success = gcm_FIML_minimizer(self.discrepancy, [self.p,1,(self.k,self.k)], verbose=verbose)
-        assert success, "WARNING: optimization did not converge"
+        assert success, "WARNING: optimization did not converge\n"
         if self.not_pos_def_warning_flag:
             print("WARNING: We encountered positive-definiteness problems during optimization.")
 
@@ -644,8 +674,18 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
             print("R", R_opt)
             print("D", D_opt)
 
-        assert all(linalg.eigvals(R_opt) > 0), "WARNING: R is not definite-positive"
-        assert all(linalg.eigvals(D_opt) > 0), "WARNING: D is not definite-positive"
+        if any(linalg.eigvalsh(R_opt) < 0):
+            text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
+        if any(linalg.eigvalsh(D_opt) < 0):
+            text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
+            if verbose:
+                print(text)
+            else:
+                raise Warning(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))

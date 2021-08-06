@@ -15,12 +15,12 @@ def convert_label(groups, offset=0):
     assert groups.shape == (len(groups),) or groups.shape == (len(groups),1), "wrong format"
     groups = groups.flatten() if len(groups.shape) == 2 else groups
     assert np.issubdtype(groups.dtype, np.integer), 'group labels should be integers'
-    assert offset == 0 or offset == 1, "the slowest label should be 0. Check your convention please"
+    assert offset == 0 or offset == 1, "the slowest label should be 0 or 1. Check your convention please"
     max_element = max(groups)
     for g in range(offset, max_element+1):
         assert np.any(groups == g), "every group should have a representant"
     assert all([g in groups for g in np.arange(offset, max_element+1)]), "strange label"
-    assert min(groups) == offset, "the minimum eleent is not equal to the offset... Please check your args"
+    assert min(groups) == offset, "the minimum element is not equal to the offset... Please check your args"
     N_groups = max_element - offset + 1
     groups_ = np.zeros((len(groups), N_groups-1)) # -1 because class offset is represented by null vector
     for g in range(1,N_groups): # we start from 1 because class offset is represented by null vector

@@ -52,6 +52,8 @@ def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D
         gcm = GCM(y, timesteps, degree, R_struct)
         try:
             beta_opt, R_opt, D_opt = gcm.solve(verbose=False)
+        except Warning as war:
+            print(war) # just print and go on
         except AssertionError as err:
             print('something went wrong while fitting the model:')
             print(err)
@@ -142,6 +144,8 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         gcm = GCM(y, timesteps, degree, R_struct, groups_converted)
         try:
             betas_opt, R_opt, D_opt = gcm.solve(verbose=False) # XXX it seems dum not to use betas_pretty=True, but extended_plot uses the ugly beta format
+        except Warning as war:
+            print(war) # just print and go on
         except AssertionError as err:
             print('something went wrong while fitting the model:')
             print(err)
@@ -226,6 +230,8 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
             try:
                 print('estimating latent classes...')
                 Rs, betas, pis= lcga.solve(verbose=False)
+            except Warning as war:
+                print(war) # just print and go on
             except AssertionError as err:
                 print('something went wrong while fitting the model:')
                 print(err)
