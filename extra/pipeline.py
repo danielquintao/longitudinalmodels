@@ -11,16 +11,34 @@ from scipy.stats import chi2
 from itertools import combinations
 
 def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D=None,
-    R_struct='multiple_identity', varname=None):
+    R_struct='multiple_identity', varname=None, use_log=False):
 
-    # 1- remove outliers and basic treatment
+    # 0- remove outliers and basic treatment
     # TODO
 
-    # 2- basic assertions
+    # 1- basic assertions
     assert (
         (y_control is not None and src_labels1D is not None) or
         (y_control is None and src_labels1D is None)
     ), "in order to use harmonize data, both y_control and src_labels1D must be provided"
+    assert not np.any(np.isnan(y_main)), "NaN (Not A Number) detected in y_main"
+    assert not np.any(np.isinf(np.abs(y_main))), "Inf or -Inf detected in y_main"
+    if y_control is not None:
+        assert not np.any(np.isnan(y_control)), "NaN (Not A Number) detected in y_control"
+        assert not np.any(np.isinf(np.abs(y_control))), "Inf or -Inf detected in y_control"
+
+    # 2- log?
+    if use_log:
+        if np.any(y_main <= 0):
+            print("We found negative values in y_main and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        elif y_control is not None and np.any(y_control <= 0):
+            print("We found negative values in y_control and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        else:
+            y_main = np.log10(y_main)
+            y_control = np.log10(y_control) if y_control is not None else None
+            print("We converted data to their logarithm (in base 10)")
 
     # 3- GCM
     print("==========================================================")
@@ -79,16 +97,17 @@ def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D
         n_params = gcm.get_n_params()
         loglik = gcm.get_loglikelihood()
         print("loglik = {}, df = {}, nb params = {}, AIC = {}, BIC = {}".format(loglik, df, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))
+        varname = '$log_{10}$('+varname+')' if (use_log and varname is not None) else varname
         plot(beta_opt, timesteps, y, degree, title='GCM - degree {}'.format(degree), varname=varname)
         print()
 
 def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
-    y_control=None, src_labels1D=None, R_struct='multiple_identity', varname=None):
+    y_control=None, src_labels1D=None, R_struct='multiple_identity', varname=None, use_log=False):
 
-    # 1- remove outliers and basic treatment
+    # 0- remove outliers and basic treatment
     # TODO
 
-    # 2- basic assertions
+    # 1- basic assertions
     assert (
         (y_control is not None and src_labels1D is not None) or
         (y_control is None and src_labels1D is None)
@@ -97,6 +116,24 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         print("no groups detected! automatically calling pipeline for normal GCM...")
         run_pipeline_GCM(y_main, timesteps, max_degree, y_control, src_labels1D, R_struct, varname)
         return
+    assert not np.any(np.isnan(y_main)), "NaN (Not A Number) detected in y_main"
+    assert not np.any(np.isinf(np.abs(y_main))), "Inf or -Inf detected in y_main"
+    if y_control is not None:
+        assert not np.any(np.isnan(y_control)), "NaN (Not A Number) detected in y_control"
+        assert not np.any(np.isinf(np.abs(y_control))), "Inf or -Inf detected in y_control"
+
+    # 2- log?
+    if use_log:
+        if np.any(y_main <= 0):
+            print("We found negative values in y_main and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        elif y_control is not None and np.any(y_control <= 0):
+            print("We found negative values in y_control and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        else:
+            y_main = np.log10(y_main)
+            y_control = np.log10(y_control) if y_control is not None else None
+            print("We converted data to their logarithm (in base 10)")
 
     # 3 - GCM with groups
     print("==========================================================")
@@ -174,6 +211,7 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         n_params = gcm.get_n_params()
         loglik = gcm.get_loglikelihood()
         print("loglik = {}, df = {}, nb params = {}, AIC = {}, BIC = {}".format(loglik, df, n_params, 2*(n_params-loglik), np.log(len(y))*n_params-2*loglik))
+        varname = '$log_{10}$('+varname+')' if (use_log and varname is not None) else varname
         if plot_with_categorical:
             plot_lcga(gcm.pretty_beta(betas_opt), timesteps, y, degree, groups-min(groups), title='GCM w/ groups - degree {}'.format(degree), varname=varname)
         else:
@@ -182,17 +220,35 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         print()
 
 def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_classes=3, y_control=None, src_labels1D=None,
-    R_struct='multiple_identity', varname=None):
+    R_struct='multiple_identity', varname=None, use_log=False):
 
-    # 1- remove outliers and basic treatment
+    # 0- remove outliers and basic treatment
     # TODO
 
-    # 2- basic assertions
+    # 1- basic assertions
     assert (
         (y_control is not None and src_labels1D is not None) or
         (y_control is None and src_labels1D is None)
     ), "in order to use harmonize data, both y_control and src_labels1D must be provided"
     assert min_degree>=1, "min_degree should be at least 1"
+    assert not np.any(np.isnan(y_main)), "NaN (Not A Number) detected in y_main"
+    assert not np.any(np.isinf(np.abs(y_main))), "Inf or -Inf detected in y_main"
+    if y_control is not None:
+        assert not np.any(np.isnan(y_control)), "NaN (Not A Number) detected in y_control"
+        assert not np.any(np.isinf(np.abs(y_control))), "Inf or -Inf detected in y_control"
+
+    # 2- log?
+    if use_log:
+        if np.any(y_main <= 0):
+            print("We found negative values in y_main and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        elif y_control is not None and np.any(y_control <= 0):
+            print("We found negative values in y_control and the log transformation was NOT applied.\n" +
+                "We maintained the original scale.\n") 
+        else:
+            y_main = np.log10(y_main)
+            y_control = np.log10(y_control) if y_control is not None else None
+            print("We converted data to their logarithm (in base 10)")
 
     # 3 - LCGA
     print("==========================================================")
@@ -246,6 +302,7 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
             preds = lcga.get_predictions()
             print("Number of subjects assigned to each cluster (by greatest posterior probability):", [sum(preds == i) for i in range(K)])
             logliks[degree][K] = (lcga.get_loglikelihood(), lcga.get_n_params())
+            varname = '$log_{10}$('+varname+')' if (use_log and varname is not None) else varname
             plot_lcga(betas, timesteps, y, degree, preds, title='LCGA - degree {} and {} clusters'.format(degree, K), varname=varname)
             print()
     # model comparison:
