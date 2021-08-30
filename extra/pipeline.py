@@ -36,7 +36,7 @@ def run_pipeline_GCM(y_main, timesteps, max_degree, y_control=None, src_labels1D
             harmonizer = Harmonizer(y_main, y_control, src_labels1D, timesteps, degree)
             print("harmonizing data")
             try:
-                _,_ = harmonizer.fit(verbose=False)
+                _,_ = harmonizer.fit(verbose=False, force_solver=True)
             except AssertionError as err:
                 print('something went wrong while harmonizing the data:')
                 print(err)
@@ -128,7 +128,7 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
             harmonizer = ExtendedHarmonizer(y_main, y_control, src_labels1D, groups_converted,timesteps, degree)
             print("harmonizing data")
             try:
-                _,_ = harmonizer.fit(verbose=False)
+                _,_ = harmonizer.fit(verbose=False, force_solver=True)
             except AssertionError as err:
                 print('something went wrong while harmonizing the data:')
                 print(err)
@@ -209,7 +209,7 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
             harmonizer = Harmonizer(y_main, y_control, src_labels1D, timesteps, degree)
             print("harmonizing data")
             try:
-                _,_ = harmonizer.fit(verbose=False)
+                _,_ = harmonizer.fit(verbose=False, force_solver=True)
             except AssertionError as err:
                 print('something went wrong while harmonizing the data:')
                 print(err)
