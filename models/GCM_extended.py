@@ -224,16 +224,10 @@ class DiagExtendedGCMSolver(ParentExtendedGCMSolver):
 
         if any(linalg.eigvalsh(R_opt) < 0):
             text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
         if any(linalg.eigvalsh(D_opt) < 0):
             text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -364,16 +358,10 @@ class TimeIndepErrorExtendedGCMSolver(ParentExtendedGCMSolver):
 
         if any(linalg.eigvalsh(R_opt) < 0):
             text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
         if any(linalg.eigvalsh(D_opt) < 0):
             text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -527,16 +515,10 @@ class DiagExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
 
         if any(linalg.eigvalsh(R_opt) < 0):
             text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
         if any(linalg.eigvalsh(D_opt) < 0):
             text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
@@ -676,16 +658,10 @@ class TimeIndepErrorExtendedGCMLavaanLikeSolver(ParentExtendedGCMSolver):
 
         if any(linalg.eigvalsh(R_opt) < 0):
             text = "WARNING: the residuals cov matrix (R) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(R_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
         if any(linalg.eigvalsh(D_opt) < 0):
             text = "WARNING: the random effects cov matrix (D) is not definite positive (the smallest eigenvalue is {})".format(min(linalg.eigvalsh(D_opt)))
-            if verbose:
-                print(text)
-            else:
-                raise Warning(text)
+            print(text)
 
         # store log-likelihood
         self.loglik = self.loglikelihood(theta_opt) # self.discrepancy_to_loglik(self.discrepancy(theta_opt))
