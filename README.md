@@ -12,4 +12,4 @@ The folder ```models``` contains the imlementations of our models. There are:
 
 The folder ```test``` contains sample data and testing code to evaluate our models. This is not a traditional "test folder" as we encounter in many software repositories to allow for safe pull requests
 
-The folder utils has auxiliary methods for the models and pipelines, in particular for plotting
+The folder ```utils``` has auxiliary methods for the models and pipelines, in particular for plotting
