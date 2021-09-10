@@ -20,7 +20,8 @@ time = np.array([-3,3,9,36])
 # run_pipeline_GCM(y, time, 2)
 # run_pipeline_extended_GCM(y, time, 2, groups2)
 # ## LCGA
-run_pipeline_LCGA(y, time, max_degree=1, max_latent_classes=3, varname='marital love', use_log=True)
+run_pipeline_LCGA(y, time, max_degree=1, max_latent_classes=3, varname='marital love', use_log=True,
+ids=np.arange(len(y)))
 
 # ## ultimate dataset (allows harmonization)
 # main_data = np.genfromtxt("harmonizer/fake_data/ultimate_dataset_main.csv", delimiter=",", skip_header=0)

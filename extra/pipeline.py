@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from datetime import datetime
 from models.GCM import GCM
 from models.LCGA import LCGA
 from utils.gcm_plot import plot, extended_plot
@@ -216,7 +218,7 @@ def run_pipeline_extended_GCM(y_main, timesteps, max_degree, groups=None,
         print()
 
 def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_classes=3, y_control=None, src_labels1D=None,
-    R_struct='multiple_identity', varname=None, use_log=False):
+    R_struct='multiple_identity', varname=None, use_log=False, ids=None, excel_output_folder=None):
 
     # 0- remove outliers and basic treatment
     # TODO
@@ -232,15 +234,18 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
     if y_control is not None:
         assert not np.any(np.isnan(y_control)), "NaN (Not A Number) detected in y_control"
         assert not np.any(np.isinf(np.abs(y_control))), "Inf or -Inf detected in y_control"
+    if ids is not None:
+        assert not np.any(np.isnan(ids)), "NaN (Not A Number) detected in ids"
+        assert not np.any(np.isinf(np.abs(ids))), "Inf or -Inf detected in ids"
 
     # 2- log?
     if use_log:
         if np.any(y_main <= 0):
             print("We found negative values in y_main and the log transformation was NOT applied.\n" +
-                "We maintained the original scale.\n") 
+                "We maintained the original scale.\n")
         elif y_control is not None and np.any(y_control <= 0):
             print("We found negative values in y_control and the log transformation was NOT applied.\n" +
-                "We maintained the original scale.\n") 
+                "We maintained the original scale.\n")
         else:
             y_main = np.log10(y_main)
             y_control = np.log10(y_control) if y_control is not None else None
@@ -293,12 +298,35 @@ def run_pipeline_LCGA(y_main, timesteps, max_degree, min_degree=1, max_latent_cl
                 print('Residual deviations covariance matrix:')
                 print(Rs[i])
                 print()
+            probs = lcga.get_clusterwise_probabilities()
             preds = lcga.get_predictions()
             print("Number of subjects assigned to each cluster (by greatest posterior probability):", [sum(preds == i) for i in range(K)])
             logliks[degree][K] = (lcga.get_loglikelihood(), lcga.get_n_params())
             varname = '$log_{10}$('+varname+')' if (use_log and varname is not None) else varname
             plot_lcga(betas, timesteps, y, degree, preds, title='LCGA - degree {} and {} clusters'.format(degree, K), varname=varname)
             print()
+            # print list with groups and individual slopes
+            to_df = np.concatenate((ids.reshape(-1,1),probs,preds.reshape(-1,1),np.ones((len(y),degree+1)),np.ones((len(y),degree+1))),axis=1)
+            for i in range(K): # copy group coefficients
+                to_df[to_df[:,1+K]==i,2+K:2+K+(degree+1)] = betas[i].flatten()
+            X = np.ones((len(timesteps),degree+1))
+            for d in range(1,degree+1):
+                X[:,d] = timesteps ** d
+            reg_factor = np.linalg.inv(X.T@X) @ X.T
+            for i,yi in enumerate(y):
+                # "individual regression"
+                yi = yi.reshape(-1,1)
+                to_df[i,2+K+(degree+1):] = (reg_factor @ yi).flatten()
+            col_names = ['ID']
+            col_names.extend(['prob[class '+str(i)+']' for i in range(K)])
+            col_names.append('class prediction')
+            col_names.extend(['class regr coeff of order '+str(i) for i in range(degree+1)])
+            col_names.extend(['ind. regr coeff of order '+str(i) for i in range(degree+1)])
+            df = pd.DataFrame(to_df, columns=col_names)
+            downloads_path = str(Path.home() / "Downloads") if excel_output_folder is None else excel_output_folder
+            name = str(datetime.now().timestamp())+"_degree{}_class{}.xlsx".format(degree, K)
+            df.to_excel(downloads_path+'/'+name, index=False)
+            print('AN EXCEL FILE CALLED {} HAS BEEN CREATED IN {}'.format(name, downloads_path))
     # model comparison:
     if max_latent_classes > 2:
         print("generating graph of the log-likelihood for different combinations...")
