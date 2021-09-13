@@ -94,7 +94,7 @@ class DiagGCMSolver(ParentGCMSolver):
             D_upper = flattened2triangular(theta[self.T:], self.p)
             D = D_upper + D_upper.T - np.eye(self.p)*np.diag(D_upper)
             Sigma_hat = R + self.Z @ (D @ self.Z.T) 
-            return np.tril(Sigma_hat).flatten()
+            return Sigma_hat[np.tril_indices(self.T)]
         jac = np.zeros((dim_out, dim_in))
         theta = np.zeros(dim_in)
         for i in range(dim_out):
@@ -313,7 +313,7 @@ class DiagGCMLavaanLikeSolver(ParentGCMSolver):
             D_upper = flattened2triangular(theta[self.T:], self.p)
             D = D_upper + D_upper.T - np.eye(self.p)*np.diag(D_upper)
             Sigma_hat = R + self.Z @ (D @ self.Z.T) 
-            return np.tril(Sigma_hat).flatten()
+            return Sigma_hat[np.tril_indices(self.T)]
         jac = np.zeros((dim_out, dim_in))
         theta = np.zeros(dim_in)
         for i in range(dim_out):
